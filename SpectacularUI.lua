@@ -14,14 +14,47 @@ ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 
--- Colores y estilos
-local Colors = {
-    Background = Color3.fromRGB(30, 30, 30),
-    Accent = Color3.fromRGB(255, 85, 85),
-    Text = Color3.fromRGB(255, 255, 255),
-    Secondary = Color3.fromRGB(50, 50, 50),
-    Hover = Color3.fromRGB(255, 120, 120),
+-- Temas predefinidos
+local Themes = {
+    Default = {
+        Background = Color3.fromRGB(30, 30, 30),
+        Accent = Color3.fromRGB(255, 85, 85),
+        Text = Color3.fromRGB(255, 255, 255),
+        Secondary = Color3.fromRGB(50, 50, 50),
+        Hover = Color3.fromRGB(255, 120, 120),
+    },
+    Aqua = {
+        Background = Color3.fromRGB(20, 30, 40),
+        Accent = Color3.fromRGB(0, 200, 255),
+        Text = Color3.fromRGB(220, 240, 255),
+        Secondary = Color3.fromRGB(40, 60, 80),
+        Hover = Color3.fromRGB(50, 220, 255),
+    },
+    Emerald = {
+        Background = Color3.fromRGB(20, 40, 30),
+        Accent = Color3.fromRGB(0, 255, 150),
+        Text = Color3.fromRGB(220, 255, 230),
+        Secondary = Color3.fromRGB(40, 80, 60),
+        Hover = Color3.fromRGB(50, 255, 180),
+    },
+    Amethyst = {
+        Background = Color3.fromRGB(40, 30, 50),
+        Accent = Color3.fromRGB(200, 100, 255),
+        Text = Color3.fromRGB(240, 220, 255),
+        Secondary = Color3.fromRGB(60, 50, 80),
+        Hover = Color3.fromRGB(220, 120, 255),
+    },
+    Ruby = {
+        Background = Color3.fromRGB(40, 20, 20),
+        Accent = Color3.fromRGB(255, 50, 50),
+        Text = Color3.fromRGB(255, 220, 220),
+        Secondary = Color3.fromRGB(80, 40, 40),
+        Hover = Color3.fromRGB(255, 80, 80),
+    }
 }
+
+-- Colores actuales (inicialmente el tema Default)
+local Colors = Themes.Default
 
 -- Animaciones
 local TweenInfoSmooth = TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
@@ -139,6 +172,46 @@ function SpectacularUI:CreateWindow(options)
 
     ToggleButton.MouseButton1Click:Connect(ToggleWindow)
 
+    -- Función para actualizar los colores del tema
+    local function UpdateTheme(themeName)
+        Colors = Themes[themeName] or Themes.Default
+        MainFrame.BackgroundColor3 = Colors.Background
+        TitleLabel.BackgroundColor3 = Colors.Secondary
+        TitleLabel.TextColor3 = Colors.Text
+        ToggleButton.BackgroundColor3 = Colors.Accent
+        ToggleButton.TextColor3 = Colors.Text
+
+        for _, tab in pairs(tabs) do
+            tab.Button.BackgroundColor3 = (tab == currentTab) and Colors.Accent or Colors.Secondary
+            tab.Button.TextColor3 = Colors.Text
+            for _, child in pairs(tab.Content:GetChildren()) do
+                if child:IsA("Frame") or child:IsA("TextButton") then
+                    child.BackgroundColor3 = Colors.Secondary
+                    if child:FindFirstChild("Indicator") then
+                        child.Indicator.BackgroundColor3 = child.Enabled and Colors.Accent or Colors.Background
+                    end
+                    for _, subChild in pairs(child:GetChildren()) do
+                        if subChild:IsA("TextLabel") or subChild:IsA("TextButton") then
+                            subChild.TextColor3 = Colors.Text
+                        end
+                        if subChild:IsA("Frame") and subChild.Name == "DropdownList" then
+                            subChild.BackgroundColor3 = Colors.Secondary
+                            for _, option in pairs(subChild:GetChildren()) do
+                                if option:IsA("TextButton") then
+                                    option.BackgroundColor3 = Colors.Background
+                                    option.TextColor3 = Colors.Text
+                                end
+                            end
+                        elseif subChild:IsA("Frame") and subChild.Name == "SliderTrack" then
+                            subChild.BackgroundColor3 = Colors.Background
+                            subChild.SliderFill.BackgroundColor3 = Colors.Accent
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     -- Crear una nueva pestaña
     function window:NewTab(options)
         local tab = {}
@@ -158,6 +231,15 @@ function SpectacularUI:CreateWindow(options)
         local TabCorner = Instance.new("UICorner")
         TabCorner.CornerRadius = UDim.new(0, 5)
         TabCorner.Parent = TabButton
+
+        -- Indicador de pestaña activa (borde inferior)
+        local TabIndicator = Instance.new("Frame")
+        TabIndicator.Size = UDim2.new(1, 0, 0, 3)
+        TabIndicator.Position = UDim2.new(0, 0, 1, -3)
+        TabIndicator.BackgroundColor3 = Colors.Accent
+        TabIndicator.BorderSizePixel = 0
+        TabIndicator.Visible = false
+        TabIndicator.Parent = TabButton
 
         -- Animación de hover y clic para el botón de la pestaña
         TabButton.MouseEnter:Connect(function()
@@ -201,9 +283,17 @@ function SpectacularUI:CreateWindow(options)
         ContentPadding.Parent = TabContent
 
         -- Ajustar el tamaño del canvas dinámicamente
-        ContentListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            TabContent.CanvasSize = UDim2.new(0, 0, 0, ContentListLayout.AbsoluteContentSize.Y + 20)
-        end)
+        local function UpdateCanvasSize()
+            local totalHeight = ContentListLayout.AbsoluteContentSize.Y + 20
+            for _, dropdown in pairs(tab.Dropdowns or {}) do
+                if dropdown.IsOpen then
+                    totalHeight = totalHeight + dropdown.ListHeight
+                end
+            end
+            TabContent.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+        end
+
+        ContentListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateCanvasSize)
 
         -- Cambiar pestaña
         TabButton.MouseButton1Click:Connect(function()
@@ -211,14 +301,18 @@ function SpectacularUI:CreateWindow(options)
             if currentTab then
                 currentTab.Content.Visible = false
                 TweenService:Create(currentTab.Button, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(0, 100, 0, 30)}):Play()
+                currentTab.Button.TabIndicator.Visible = false
             end
             currentTab = tab
             TabContent.Visible = true
             TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(0, 100, 0, 30)}):Play()
+            TabIndicator.Visible = true
+            UpdateCanvasSize()
         end)
 
         tab.Button = TabButton
         tab.Content = TabContent
+        tab.Dropdowns = {} -- Para rastrear dropdowns en esta pestaña
         table.insert(tabs, tab)
 
         -- Toggle
@@ -251,6 +345,7 @@ function SpectacularUI:CreateWindow(options)
             ToggleLabel.Parent = ToggleFrame
 
             local ToggleIndicator = Instance.new("Frame")
+            ToggleIndicator.Name = "Indicator"
             ToggleIndicator.Size = UDim2.new(0, 40, 0, 20)
             ToggleIndicator.Position = UDim2.new(1, -50, 0.5, -10)
             ToggleIndicator.BackgroundColor3 = toggle.Enabled and Colors.Accent or Colors.Background
@@ -271,6 +366,10 @@ function SpectacularUI:CreateWindow(options)
             CircleCorner.CornerRadius = UDim.new(0, 8)
             CircleCorner.Parent = Circle
 
+            -- Inicializar estado visual
+            ToggleIndicator.BackgroundColor3 = toggle.Enabled and Colors.Accent or Colors.Background
+            Circle.Position = toggle.Enabled and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2)
+
             ToggleFrame.MouseButton1Click:Connect(function()
                 toggle.Enabled = not toggle.Enabled
                 TweenService:Create(ToggleIndicator, TweenInfoFast, {BackgroundColor3 = toggle.Enabled and Colors.Accent or Colors.Background}):Play()
@@ -289,6 +388,7 @@ function SpectacularUI:CreateWindow(options)
                 TweenService:Create(ToggleFrame, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(1, 0, 0, 30)}):Play()
             end)
 
+            toggle.Frame = ToggleFrame
             return toggle
         end
 
@@ -323,6 +423,7 @@ function SpectacularUI:CreateWindow(options)
             SliderLabel.Parent = SliderFrame
 
             local SliderTrack = Instance.new("Frame")
+            SliderTrack.Name = "SliderTrack"
             SliderTrack.Size = UDim2.new(1, -20, 0, 5)
             SliderTrack.Position = UDim2.new(0, 10, 1, -15)
             SliderTrack.BackgroundColor3 = Colors.Background
@@ -334,6 +435,7 @@ function SpectacularUI:CreateWindow(options)
             TrackCorner.Parent = SliderTrack
 
             local SliderFill = Instance.new("Frame")
+            SliderFill.Name = "SliderFill"
             SliderFill.Size = UDim2.new((slider.Default - slider.Min) / (slider.Max - slider.Min), 0, 1, 0)
             SliderFill.BackgroundColor3 = Colors.Accent
             SliderFill.BorderSizePixel = 0
@@ -383,6 +485,7 @@ function SpectacularUI:CreateWindow(options)
                 TweenService:Create(SliderFrame, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(1, 0, 0, 50)}):Play()
             end)
 
+            slider.Frame = SliderFrame
             return slider
         end
 
@@ -393,6 +496,7 @@ function SpectacularUI:CreateWindow(options)
             dropdown.Callback = options.Callback or function() end
             dropdown.Options = options.Options or {"Option 1", "Option 2"}
             dropdown.Default = options.Options[1]
+            dropdown.ListHeight = 0
 
             local DropdownFrame = Instance.new("Frame")
             DropdownFrame.Size = UDim2.new(1, 0, 0, 30)
@@ -431,6 +535,7 @@ function SpectacularUI:CreateWindow(options)
             DropdownCornerButton.Parent = DropdownButton
 
             local DropdownList = Instance.new("Frame")
+            DropdownList.Name = "DropdownList"
             DropdownList.Size = UDim2.new(1, 0, 0, 0)
             DropdownList.Position = UDim2.new(0, 0, 1, 5)
             DropdownList.BackgroundColor3 = Colors.Secondary
@@ -457,6 +562,8 @@ function SpectacularUI:CreateWindow(options)
 
             local function UpdateListSize()
                 DropdownList.Size = UDim2.new(1, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
+                dropdown.ListHeight = ListLayout.AbsoluteContentSize.Y + 10
+                UpdateCanvasSize()
             end
 
             ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateListSize)
@@ -474,8 +581,16 @@ function SpectacularUI:CreateWindow(options)
                 DropdownList.Visible = true
                 if isOpen then
                     table.insert(openDropdowns, dropdown)
-                    TweenService:Create(DropdownList, TweenInfoFast, {Size = UDim2.new(1, 0, 0, ListLayout.AbsoluteContentSize.Y + 10), BackgroundTransparency = 0}):Play()
+                    TweenService:Create(DropdownList, TweenInfoFast, {Size = UDim2.new(1, 0, 0, dropdown.ListHeight), BackgroundTransparency = 0}):Play()
                     DropdownButton.Text = "▲"
+                    -- Desactivar interacción con elementos debajo
+                    for _, child in pairs(TabContent:GetChildren()) do
+                        if child:IsA("TextButton") or child:IsA("Frame") then
+                            if child ~= DropdownFrame and child.ZIndex <= DropdownFrame.ZIndex then
+                                child.Active = false
+                            end
+                        end
+                    end
                 else
                     table.remove(openDropdowns, table.find(openDropdowns, dropdown))
                     TweenService:Create(DropdownList, TweenInfoFast, {Size = UDim2.new(1, 0, 0, 0), BackgroundTransparency = 1}):Play()
@@ -485,12 +600,20 @@ function SpectacularUI:CreateWindow(options)
                         end
                     end)
                     DropdownButton.Text = "▼"
+                    -- Reactivar interacción con elementos debajo
+                    for _, child in pairs(TabContent:GetChildren()) do
+                        if child:IsA("TextButton") or child:IsA("Frame") then
+                            child.Active = true
+                        end
+                    end
                 end
                 TweenService:Create(DropdownButton, TweenInfoFast, {BackgroundColor3 = isOpen and Colors.Hover or Colors.Accent, Size = isOpen and UDim2.new(0, 32, 0, 32) or UDim2.new(0, 30, 0, 30)}):Play()
+                UpdateCanvasSize()
             end
 
             dropdown.IsOpen = isOpen
             dropdown.Toggle = ToggleList
+            table.insert(tab.Dropdowns, dropdown)
 
             DropdownButton.MouseButton1Click:Connect(ToggleList)
 
@@ -533,10 +656,11 @@ function SpectacularUI:CreateWindow(options)
                 TweenService:Create(DropdownFrame, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(1, 0, 0, 30)}):Play()
             end)
 
+            dropdown.Frame = DropdownFrame
             return dropdown
         end
 
-        -- Botón (nueva función)
+        -- Botón
         function tab:Button(options)
             local button = {}
             button.Text = options.Text or "Button"
@@ -571,6 +695,7 @@ function SpectacularUI:CreateWindow(options)
                 TweenService:Create(ButtonFrame, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(1, 0, 0, 30)}):Play()
             end)
 
+            button.Frame = ButtonFrame
             return button
         end
 
@@ -579,6 +704,7 @@ function SpectacularUI:CreateWindow(options)
             currentTab = tab
             TabContent.Visible = true
             TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(0, 100, 0, 30)}):Play()
+            TabIndicator.Visible = true
         end
 
         return tab
@@ -586,7 +712,10 @@ function SpectacularUI:CreateWindow(options)
 
     -- Función para mostrar notificaciones con apilamiento
     local notificationOffset = 0
-    function window:Notify(options)
+    local maxNotifications = 5 -- Máximo de notificaciones visibles a la vez
+    local notificationQueue = {}
+
+    local function ShowNotification(options)
         local notify = {}
         notify.Title = options.Title or "Notification"
         notify.Text = options.Text or "This is a notification!"
@@ -594,7 +723,7 @@ function SpectacularUI:CreateWindow(options)
 
         local NotifyFrame = Instance.new("Frame")
         NotifyFrame.Size = UDim2.new(0, 250, 0, 80)
-        NotifyFrame.Position = UDim2.new(1, 0, 0, 10 + notificationOffset)
+        NotifyFrame.Position = UDim2.new(1, 0, 0.02, notificationOffset)
         NotifyFrame.BackgroundColor3 = Colors.Background
         NotifyFrame.BackgroundTransparency = 1 -- Para el efecto de desvanecimiento
         NotifyFrame.BorderSizePixel = 0
@@ -628,21 +757,37 @@ function SpectacularUI:CreateWindow(options)
         NotifyText.Parent = NotifyFrame
 
         -- Animación de entrada con rebote
-        TweenService:Create(NotifyFrame, TweenInfoSmooth, {Position = UDim2.new(1, -260, 0, 10 + notificationOffset)}):Play()
+        TweenService:Create(NotifyFrame, TweenInfoSmooth, {Position = UDim2.new(1, -260, 0.02, notificationOffset)}):Play()
         TweenService:Create(NotifyFrame, TweenInfoFade, {BackgroundTransparency = 0}):Play()
 
         -- Ajustar el offset para la próxima notificación
         notificationOffset = notificationOffset + 90
+        table.insert(notificationQueue, NotifyFrame)
 
         -- Animación de salida después de la duración
         task.delay(notify.Duration, function()
-            TweenService:Create(NotifyFrame, TweenInfoSmooth, {Position = UDim2.new(1, 0, 0, 10 + notificationOffset - 90)}):Play()
+            TweenService:Create(NotifyFrame, TweenInfoSmooth, {Position = UDim2.new(1, 0, 0.02, notificationOffset - 90)}):Play()
             TweenService:Create(NotifyFrame, TweenInfoFade, {BackgroundTransparency = 1}):Play()
             task.delay(0.5, function()
                 NotifyFrame:Destroy()
                 notificationOffset = notificationOffset - 90
+                table.remove(notificationQueue, table.find(notificationQueue, NotifyFrame))
+                -- Ajustar posiciones de notificaciones restantes
+                for i, frame in ipairs(notificationQueue) do
+                    TweenService:Create(frame, TweenInfoFast, {Position = UDim2.new(1, -260, 0.02, (i - 1) * 90)}):Play()
+                end
             end)
         end)
+    end
+
+    function window:Notify(options)
+        if #notificationQueue >= maxNotifications then
+            task.delay(1, function()
+                window:Notify(options)
+            end)
+        else
+            ShowNotification(options)
+        end
     end
 
     -- Cerrar dropdowns al hacer clic fuera
@@ -655,6 +800,24 @@ function SpectacularUI:CreateWindow(options)
             end
         end
     end)
+
+    -- Pestaña para cambiar temas
+    local ThemeTab = window:NewTab({
+        Title = "Themes"
+    })
+
+    ThemeTab:Dropdown({
+        Text = "Select Theme",
+        Callback = function(value)
+            UpdateTheme(value)
+            window:Notify({
+                Title = "Theme",
+                Text = "Theme changed to " .. value,
+                Duration = 3
+            })
+        end,
+        Options = {"Default", "Aqua", "Emerald", "Amethyst", "Ruby"}
+    })
 
     -- Abrir la ventana al iniciar
     ToggleWindow()
