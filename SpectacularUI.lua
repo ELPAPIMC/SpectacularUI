@@ -1,19 +1,19 @@
 local SpectacularUI = {}
 
--- Servicios
+-- Servicios de Roblox
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Configuración de la UI
+-- Configuración inicial de la UI
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SpectacularUI"
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.IgnoreGuiInset = true
 
--- Temas predefinidos
+-- Temas disponibles
 local Themes = {
     Default = {Background = Color3.fromRGB(30, 30, 30), Accent = Color3.fromRGB(255, 85, 85), Text = Color3.fromRGB(255, 255, 255), Secondary = Color3.fromRGB(50, 50, 50), Hover = Color3.fromRGB(255, 120, 120)},
     Aqua = {Background = Color3.fromRGB(20, 30, 40), Accent = Color3.fromRGB(0, 200, 255), Text = Color3.fromRGB(220, 240, 255), Secondary = Color3.fromRGB(40, 60, 80), Hover = Color3.fromRGB(50, 220, 255)},
@@ -24,8 +24,6 @@ local Themes = {
 
 local Colors = Themes.Default
 local TweenInfoFast = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
-local TweenInfoFade = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-local openDropdowns = {}
 
 function SpectacularUI:CreateWindow(options)
     local window = {}
@@ -33,6 +31,7 @@ function SpectacularUI:CreateWindow(options)
     window.SizeX = options.SizeX or 400
     window.SizeY = options.SizeY or 500
 
+    -- Marco principal
     local MainFrame = Instance.new("Frame")
     MainFrame.Size = UDim2.new(0, window.SizeX, 0, window.SizeY)
     MainFrame.Position = UDim2.new(0.5, -window.SizeX / 2, 0.5, -window.SizeY / 2)
@@ -44,6 +43,7 @@ function SpectacularUI:CreateWindow(options)
     UICorner.CornerRadius = UDim.new(0, 10)
     UICorner.Parent = MainFrame
 
+    -- Título
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Size = UDim2.new(1, 0, 0, 40)
     TitleLabel.BackgroundColor3 = Colors.Secondary
@@ -54,6 +54,7 @@ function SpectacularUI:CreateWindow(options)
     TitleLabel.BorderSizePixel = 0
     TitleLabel.Parent = MainFrame
 
+    -- Contenedor de pestañas
     local TabContainer = Instance.new("ScrollingFrame")
     TabContainer.Size = UDim2.new(1, -20, 0, 40)
     TabContainer.Position = UDim2.new(0, 10, 0, 50)
@@ -70,10 +71,11 @@ function SpectacularUI:CreateWindow(options)
     TabListLayout.Parent = TabContainer
 
     local function UpdateTabCanvas()
-        TabContainer.CanvasSize = UDim2.new(0, TabListLayout.AbsoluteContentSize.X, 0, 0)
+        TabContainer.CanvasSize = UDim2.new(0, TabListLayout.AbsoluteContentSize.X + 20, 0, 0)
     end
     TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateTabCanvas)
 
+    -- Contenedor de contenido
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -20, 1, -100)
     ContentContainer.Position = UDim2.new(0, 10, 0, 90)
@@ -84,13 +86,13 @@ function SpectacularUI:CreateWindow(options)
     local currentTab = nil
     local tabs = {}
 
+    -- Actualizar tema
     local function UpdateTheme(themeName)
         Colors = Themes[themeName] or Themes.Default
         MainFrame.BackgroundColor3 = Colors.Background
         TitleLabel.BackgroundColor3 = Colors.Secondary
         TitleLabel.TextColor3 = Colors.Text
         TabContainer.ScrollBarImageColor3 = Colors.Accent
-
         for _, tab in pairs(tabs) do
             tab.Button.BackgroundColor3 = (tab == currentTab) and Colors.Accent or Colors.Secondary
             tab.Button.TextColor3 = Colors.Text
@@ -99,7 +101,7 @@ function SpectacularUI:CreateWindow(options)
                 if child:IsA("Frame") or child:IsA("TextButton") then
                     child.BackgroundColor3 = Colors.Secondary
                     if child:FindFirstChild("Indicator") then
-                        child.Indicator.BackgroundColor3 = child.Enabled and Colors.Accent or Colors.Background
+                        child.Indicator.BackgroundColor3 = Colors.Accent
                     end
                     for _, subChild in pairs(child:GetChildren()) do
                         if subChild:IsA("TextLabel") or subChild:IsA("TextButton") then
@@ -111,6 +113,7 @@ function SpectacularUI:CreateWindow(options)
         end
     end
 
+    -- Crear nueva pestaña
     function window:NewTab(options)
         local tab = {}
         tab.Title = options.Title or "Tab"
@@ -154,7 +157,6 @@ function SpectacularUI:CreateWindow(options)
         ContentListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateCanvasSize)
 
         TabButton.MouseButton1Click:Connect(function()
-            if currentTab == tab then return end
             if currentTab then
                 currentTab.Content.Visible = false
                 currentTab.Button.BackgroundColor3 = Colors.Secondary
@@ -171,6 +173,7 @@ function SpectacularUI:CreateWindow(options)
         tab.Content = TabContent
         table.insert(tabs, tab)
 
+        -- Botón
         function tab:Button(options)
             local ButtonFrame = Instance.new("TextButton")
             ButtonFrame.Size = UDim2.new(1, 0, 0, 30)
@@ -187,6 +190,7 @@ function SpectacularUI:CreateWindow(options)
             end)
         end
 
+        -- Slider
         function tab:Slider(options)
             local SliderFrame = Instance.new("Frame")
             SliderFrame.Size = UDim2.new(1, 0, 0, 50)
@@ -244,6 +248,70 @@ function SpectacularUI:CreateWindow(options)
             end)
         end
 
+        -- Dropdown (nueva implementación)
+        function tab:Dropdown(options)
+            local DropdownFrame = Instance.new("Frame")
+            DropdownFrame.Size = UDim2.new(1, 0, 0, 30)
+            DropdownFrame.BackgroundColor3 = Colors.Secondary
+            DropdownFrame.BorderSizePixel = 0
+            DropdownFrame.Parent = TabContent
+
+            local DropdownButton = Instance.new("TextButton")
+            DropdownButton.Size = UDim2.new(1, 0, 0, 30)
+            DropdownButton.BackgroundTransparency = 1
+            DropdownButton.Text = options.Text or "Select an option"
+            DropdownButton.TextColor3 = Colors.Text
+            DropdownButton.TextSize = 14
+            DropdownButton.Font = Enum.Font.Gotham
+            DropdownButton.Parent = DropdownFrame
+
+            local DropdownList = Instance.new("Frame")
+            DropdownList.Size = UDim2.new(1, 0, 0, 0)
+            DropdownList.Position = UDim2.new(0, 0, 1, 0)
+            DropdownList.BackgroundColor3 = Colors.Secondary
+            DropdownList.BorderSizePixel = 0
+            DropdownList.Visible = false
+            DropdownList.ClipsDescendants = true
+            DropdownList.Parent = DropdownFrame
+
+            local ListLayout = Instance.new("UIListLayout")
+            ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            ListLayout.Parent = DropdownList
+
+            local isOpen = false
+            DropdownButton.MouseButton1Click:Connect(function()
+                isOpen = not isOpen
+                local height = isOpen and (#options.Options * 30) or 0
+                TweenService:Create(DropdownList, TweenInfoFast, {Size = UDim2.new(1, 0, 0, height)}):Play()
+                DropdownList.Visible = true
+                if not isOpen then
+                    task.wait(0.2)
+                    DropdownList.Visible = false
+                end
+            end)
+
+            for i, option in pairs(options.Options) do
+                local OptionButton = Instance.new("TextButton")
+                OptionButton.Size = UDim2.new(1, 0, 0, 30)
+                OptionButton.BackgroundColor3 = Colors.Secondary
+                OptionButton.Text = option
+                OptionButton.TextColor3 = Colors.Text
+                OptionButton.TextSize = 14
+                OptionButton.Font = Enum.Font.Gotham
+                OptionButton.BorderSizePixel = 0
+                OptionButton.Parent = DropdownList
+
+                OptionButton.MouseButton1Click:Connect(function()
+                    DropdownButton.Text = option
+                    options.Callback(option)
+                    isOpen = false
+                    TweenService:Create(DropdownList, TweenInfoFast, {Size = UDim2.new(1, 0, 0, 0)}):Play()
+                    task.wait(0.2)
+                    DropdownList.Visible = false
+                end)
+            end
+        end
+
         if #tabs == 1 then
             currentTab = tab
             TabContent.Visible = true
@@ -251,14 +319,15 @@ function SpectacularUI:CreateWindow(options)
             TabIndicator.Visible = true
         end
 
-        UpdateTabCanvas()
         return tab
     end
 
+    -- Notificación
+    local notificationCount = 0
     function window:Notify(options)
         local NotifyFrame = Instance.new("Frame")
         NotifyFrame.Size = UDim2.new(0, 250, 0, 80)
-        NotifyFrame.Position = UDim2.new(1, -260, 0.02, 0)
+        NotifyFrame.Position = UDim2.new(1, -260, 0.02, notificationCount * 90)
         NotifyFrame.BackgroundColor3 = Colors.Background
         NotifyFrame.Parent = ScreenGui
 
@@ -285,17 +354,20 @@ function SpectacularUI:CreateWindow(options)
         NotifyText.TextWrapped = true
         NotifyText.Parent = NotifyFrame
 
+        notificationCount = notificationCount + 1
         task.delay(options.Duration or 3, function()
             NotifyFrame:Destroy()
+            notificationCount = notificationCount - 1
         end)
     end
 
+    -- Pestaña de temas por defecto
     local ThemeTab = window:NewTab({Title = "Themes"})
     ThemeTab:Dropdown({
         Text = "Select Theme",
         Callback = function(value)
             UpdateTheme(value)
-            window:Notify({Title = "Theme", Text = "Theme changed to " .. value, Duration = 3})
+            window:Notify({Title = "Theme", Text = "Tema cambiado a " .. value, Duration = 3})
         end,
         Options = {"Default", "Aqua", "Emerald", "Amethyst", "Ruby"}
     })
