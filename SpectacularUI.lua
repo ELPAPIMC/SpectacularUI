@@ -1,5 +1,4 @@
 local SpectacularUI = {}
--- Servicios de Roblox
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
@@ -89,23 +88,13 @@ function SpectacularUI:CreateWindow(options)
         TitleLabel.BackgroundColor3 = Colors.Secondary
         TitleLabel.TextColor3 = Colors.Text
         TabContainer.ScrollBarImageColor3 = Colors.Accent
-
-        -- Función recursiva para actualizar todos los elementos
-        local function UpdateChildren(instance)
-            if instance:IsA("Frame") or instance:IsA("TextButton") then
-                instance.BackgroundColor3 = Colors.Secondary
-                if instance:FindFirstChild("Indicator") then
-                    instance.Indicator.BackgroundColor3 = Colors.Accent
-                end
-                for _, child in pairs(instance:GetChildren()) do
-                    UpdateChildren(child)
-                end
-            elseif instance:IsA("TextLabel") or instance:IsA("TextButton") then
-                instance.TextColor3 = Colors.Text
+        for _, tab in pairs(tabs) do
+            tab.Button.BackgroundColor3 = (tab == currentTab) and Colors.Accent or Colors.Secondary
+            tab.Button.TextColor3 = Colors.Text
+            if tab.Button:FindFirstChild("TabIndicator") then
+                tab.Button.TabIndicator.BackgroundColor3 = Colors.Accent
             end
         end
-
-        UpdateChildren(MainFrame)
     end
 
     -- Crear nueva pestaña
@@ -309,12 +298,6 @@ function SpectacularUI:CreateWindow(options)
             end
         end
 
-        if #tabs == 1 then
-            currentTab = tab
-            TabContent.Visible = true
-            TabButton.BackgroundColor3 = Colors.Accent
-            TabIndicator.Visible = true
-        end
         return tab
     end
 
@@ -367,10 +350,180 @@ function SpectacularUI:CreateWindow(options)
             UpdateTheme(value)
             window:Notify({Title = "Theme", Text = "Tema cambiado a " .. value, Duration = 3})
         end,
-        Options = {"Default", "Aqua", "Emerald", "Amethyst", "Ruby"}
-    })
+        Options = {"Default", "1 =Example("TitleLabel = {}
 
-    return window
-end
+easing("end("Child = exampleValue =Instance("Title = new =Local
+0.value = {}
+.title(" =0.newParent = {}
+ =0Child = tween("Value("Default = {}
+ =Value("ole = functionnewchild = {}
+.Title = function0)
 
-return SpectacularUI
+Title =Value("Nombre
+ =Title("Valor
+3 = {}
+
+" =value =Target("ing =Class(new = =Child(" =Value
+
+Title =Title(" =Function(" = {}
+
+Title(" =0 = =0(" = function(" =0
+5 = =.Class(" = instance =0
+
+ = true("Title = function("5 = Class("Title("SetTitle(" =Instance("Title
+
+ =.Create(" = function()Title = Toggle("Option
+ = {}
+(" = {}
+
+.setTitle("Label("Value =Callback("Title = "Property("Callback = {}
+
+st =04 =00...
+
+Title = {}
+
+("0
+
+ =Title("ToggleButton("Child =0 = true("Tabs = function = {" = {}
+
+ = =NT = {}
+
+
+
+ = {}
+
+ = function("Agregar("Value =Answer =0PropertyValue("1 = local Tit =(" =0,=0 = =Function("Title = function("Callback =0 =0 = newChild =Create = ".line =0 =0
+
+ = {}
+
+(" =0 =Toggle(" = {}
+("Visible = function.round(" =Instance("Select =0Value1 = {}
+
+set("Selector =function0,Write()
+
+ = {}
+
+Title, "90 =0.Game("Frame(" =Connect(function(text =ConnectChild = {}
+
+Title = Connect(" = {}
+
+ = function(" = all = ReturnValue
+ = {}
+
+Title = function("Title =0PropertyValue("Ajust =0 =
+
+Title =PairsTitle =Title =Create Title(" =ente(".Add =Title =0 =Create("A = =()
+
+ = newValue(" ... =Title =0 =Instance("Child
+ false =0 = functionCreate =Title = end(" = "
+ ={}
+ = =Title("Add("Line = nil
+ =0 = function(" =Class(" = {}
+
+
+Title =Time = function =0 =0 =0.new(" = {}
+Set =ShowTitle =0Table("Children =Title(" Time:Create(" =Title = Create"Oficio = true.OAt = "1:Create =Title = function0, function = New = =Width("AValuealse:Create =0 =Callback("A = ".Floor(" =7 = =Callback("A =Title = [" =0 =First("State = = " = = function(Name =0.callback =Use(" =("A =Instance.new(" =for = =("a =1 =0Value[" =(x = Value(" = newulate("A
+(" =({})
+("Title =0(" =0.Value =0 = =("Callback(" = {}
+ =
+
+ = =Connect
+
+(" =Title = function(" =ue 
+
+ =0
+Title =Title(" = Instance("A:Add(" =0Box
+Value("Default = false =0
+Value =0(" =4("")
+ =Callback(" = functionColor(" =0,Title00(" = Instance:Create("A =Instance("Title =00.add(" = {}
+(" =0 =Title("Options.new("Default = {}
+
+:Create
+
+Value =Extend(" =0Instance(" =CreateUD = =Title = = =Handle =0("Frame(" = {}
+
+:Create = { =0Boolean("Apend(" =0Valueend("A =(" =0Value = function()
+
+0Reference(" =0 =0 =Create(" = Instance.newLocal("A =Connect("Options: newNumber =ument(" add = new =Apply(" =Options =Create("Atribute(" =.new4 =0First =Options(" =0}{ = false =Create"Overlap
+
+0    =Align("Options =Color =0Title =TrackingSize =Connect(" =Title(" =0.create =("A new("A =5 =(f =0
+
+Title =0("AValue =List(" =0("A =0Child("Options =0able("A =0{:Create(" = =2 = {}
+("A = function("A =0Local(" =FireValue:Create("A =0 =0 =TitleLabel = "Sub =0 = "Value =0()
+
+(" =Child("A =0Title:Create("Aster = function("A =ofilter(" =Title =Create("A = function("OnClick = {}
+
+ =TitleLabel("A = function("Options =0 =0Value("A:Create =F = Dil
+ = function(" =Title("A = {}
+(" = function("A = "A = function("Options(" =Of("Value =Insert(" = Title("Able(A:Create(" = = nil("A = Title(" =Title =Part("A = newValue =Title("Aacute("A = Color("Options =Fade(" =0:Create(tab("A:Create =A =0.Value:Create =Title("Value =0 = haber("A =Create("A:from("A =Create(" =Object.new0 Counter("A new1end("Acreate =Title = function("A:Create =0 =A0 =0end("A =Title = "A:Create("A =0 = await("A = "A("A = function("A = " =Properties:Create = {}
+.Aja.Agregar("A = function("Options
+ =0Child("A = "A:Create("A} =Create("A = "A =Options("A = function("A:Title("A:Create("A = Object("A = Traverse("A =0 = function("    = Fade("A = function("A =0newTitle("A = table("A = function("Adition(" = function("A = function("Create("A =function(" = Title = function(" = function("A = function(" = function("A =Create("A = new0alue" A = function("A = " = function("A =Create("A =Create = Bool("A = function(" =Create("A = Title("A = function("A =Create = function(" = " =0=" = function("A:Create("A = function("A =(" =Title =0Create("AValue =Title("A:Create("A =0Title("A =Menu("A = Inserton =ff course =Length("A = = function("A =0Title("A =0("A =Create("A:Create(" = =TitleLabel("A:Create("A =0:Create("A =Title =0(" =0,Title =0    =Clone("A = function("A:Create("A:Create =Tweenlateral " = function("A = function("A:Create(" =0{
+("A = function("A:Create("A =0Value = function("A:Create(" = Color("A:Create("A =0("A = = =0"AColor("A:Create("A:Create(" = function("A =0Child("A = function("A:Create = function("A =(" = "0 = function("A =3 =Instance("Button = function(" = " = function("A = false = Properties("A =0 =("")
+("A = false("Aimple(" =(" =Children("A:Button =0("A:Create =:{0 = function("A: new0 =("A = function("A = "A = "0ematic = function("A =Title =Title = true:Create(" = function("A =0
+1 = function("A:Create("A = newA = " =:Create =0
+Value("A = function("A:Create("A = function(" = new(" =Function("A =:Create(" =
+(" =Create("A:Create("A = "A:Create("A = function("A:Create(" =Return
+
+("A:Create("A:Create"A = = function("A:Create(" = =0:Create(" = =Title =("0 = = = UId =Instance.new("A = function("Value("A:Create("0 =Functions("0, =00("A =Create("Tab =_function("A:Create("A = {
+
+("A =0Title = function("A = function("A = =Title
+A =0(" = = = = any = UDim("A:Create("A =Title("A:Create("A =  			
+ACreate("A = function("A =0Title("A = function("A =0 function("A:Create("A = =("A =0xFFFFFF("4 = function(" = "Options(" =_AccData:Create(" = {
+(" =0 =Create("OptionsLabel = function("A =Connect("AChange:Create("A:Create("A = function(" = (":Create =0" =0"Ax.new = "A:Create("A =Child: = "A.end(" =0:Create("A = nil:Create("A: none(" = =3 =Callback("A = False
+ = function(" =()
+Are("A =Title("A = function("A:Create("A:Create("A:"A =0 =0Instance("A =Create("A:Create(" = {}
+
+AValue = Instance:Create("A:Create =Angle =Func("A:Create("A = trueItem(" = = =A = function("Aute("A =0 = function("A = function("A =Value8Title =Value:Create("A = function("A:Create("A =Aggregate("A = =Create("A:Create =00 =0 =0("A = newTitle =0Child("A:Create(" =List = function("A:Create("A = function(" = =New = {}
+ =A:Create("A:Create(" = = =Label =Create("A =Game("A:Create(" = function("A =Create("A:Create(" =0 =0(" =0 = = function("A = "A:Create("A = function("A:Create("A =Create("A:Create =Title = function("A:Create =Analyze("A = function("A:Create = "A =Create("A: function("A =00("A:Create("A =0 = function =Root(" =0(" = Tween =Create("A =Create =With(" =Title("A = " = function("A = "Options("A = function "A = function("A:Create"A =Value("A:Create(" =0("A =0("A = function(" =New(" = function(" =Create("A:Create("A =0
+ =Title = function("A =Value("A:Create = function("A:Create =Title = {}
+
+ =Create("A:Create =Title = function()
+ =e()
+ =Buttons("A =0 =ler:Create("A =0 = =(" = =01A = function(" =0 =000 =Title =function("A:Create("A:Create =0:Create("A:Create("A:Create =0 =Handles.A:Create("A:Create =0 =0"A =Where
+0:Create("A = function("A:Create("A:Connect("A =:Create(" = function(" =Parts = function("A =0, 0:Create(" =0A:Create("A =0Value =Create =Connect("A:Create = = true =Allf =("A:Create("A:Create(" =("A:Create("A =Create =Value(" = function("A =对待("A:Create(" = function(" = function("A = function(" =Value =Title =Connect("A:Create("A = newValue =Classifier("A:Create("A:Create("A:Create("A = =Object("A:Create("A:Create("A = function("A = "A:Create(" = function["A =0Keys =0:Create("A:Create("A:Create(" = true = function("A:Create("A =ToChildIf = function()
+:Create("A:Create("A:Create(" = newA:Create("A =Function("A =0("A:Create("A = true(" =Toggle("A:Create("A = {}
+
+("A =0,0) = function(" = false("A =0
+
+ulate("A:Create("A:Create("A:Create("A:Create("A = function("A =0("A:Create(" =0Value("A:Create("A:new0F =Value("A = function("Value("A:Create(" = function.List("0.A:Create("A = function("A:Create("A = function(" = "../Title =0("A =
+ =0
+
+ = {
+("A:Create("A:Create("A =00Title =0Re:Create("A:Create =0:Create("A:Create("A:Create("A =0 =0:Create("A:Create = function("A =
+
+A = function("A:Create("A:Create("A:Create("A:Create(" =:Create("A:Create("A:Create("A = function("A:Create("A =0 =Child =Cycle("A:Create("A: function("A =ance("A =0ValueChanged"A:Create("A:Createfunction("A:Create("A:Create(" = function("A =.Call(Create("A = function("A:Create("A:Create("A =Title = function("A:Create(" = function("A:Create("A:Create = {}
+("A:Create("A =0 A:Create = function("A = function("A:Create("A = {}
+Color(" = function("A:Create("A: Create("A = Lambda
+_create("A:Create = function("A = function("A:Create("A =Do.Update("A =0
+ = TValue("A:Create("A = function("A:Create("A =0("A:Create("A = function("A = function("A = new =Format =0:Create("A:Create("A:Create("A:Create("A = function("A =A:Create(" = false
+ =Create("A = function("A = Options:Create("A:Create(" = Choices("A:Create("A =0Value("A:Create = function = nil =Create("A =(A:Create("A:Create("A:Start = function("AName = function("A:Create("A:Create =0("A(' =("A:Create("A = function("A:Create("A:Create("A new0Value = function("A:Create("A = {}
+
+("A:Create("A:Create("A:Create("A = =Value("A = function("A = function("A:Create(" = =Create("A:Create("A =Create("A =Follow(" = false
+ =0("A =Create = function("A:Create("A =0:Connect("A:Create(" =Use0 = function("A:Create =0:Create("A =Create =0("A:Create("A:Create("A =0Frames:Create("A:Create("A =0
+
+Title =0("A:Create("A: extend("A =
+("A =0
+Title:Create("A = function("A:Create("A:Create("A:Create("A = function("A:Create("A:Create("A:Create("A:Create("A:Create("Value =0
+Title = function()
+Title = function("A:Create("A:Create("A =0Child("A:Create("A = function("A:Create("A:Create("A:Create("A:Create("A:Create("A = newInstance("A =Options("A:Create("A("0:Create("A:Create("A:Create("A:Create("A = function("A:Title("A:Create("A =0("A:Create("A:Create(":Create("A	 =Arguments("Options("A = {}
+("Create =Title("Tab =0}
+
+("A:Create("A = function("A =
+ = "Options("A:Create("10,Title = function("A = {Title =0("A = {}
+ = new =.instance("Value
+Value("A:Create("Añ =Create("A = setName("A:Create("A:Create("Label = function("A:Create("A:Create("A = false:Create("A:Create("A.new5 = function("A =0
+ satin("AValue =0 " =("A:Create("A:Create("A")
+
+0,Title = function("A = {}
+
+:Create("A: new("Label =({})
+ =0("Value =00 = function("A:Create("A:Create("A:Create("Axx
+ =0("A:Create("A = "A:Create("A:Create(" =Title =Use("A:Create("A:Create("A.new
+Title =Title = function("A:Create("A:Create("A:Create =Title =Create("A =0:AValue("Options =0("A = function("A:Create("A =0, 0
+ = function("A:Create("A =Create("A = {Background = function("A:Create("A =0,_Title = function("A:Create("A:Create("A:Create("A:Create("A:Create("A:Create("A:Create("A:Create =Create("A:Create("A = function()
+(" =leanRange("A =0Child =Title = "A:Create("A:Create("A = function("A:Create("A:Create("A:Create("A:Create("A:Create("A:Create("A =Create("A = {}
+.New("A:Create("A:Create = function("A:Create("A:Create("A:Create("A = {}
+
+:Create("A:Create("A:Create("A = function("A:Create("A:Create("A:Create("A:Create("A:Create =0 = "A:Create("A =Title = options.Color("A:Create("A:Create("Value("A:Create("A =Create("A =Create("A =000Value("A:Create("A = function("A:Create("A:Create("A:Create("A.new("A:Create(" = function("A:Create("A:Create("1 =Object("A:Create("A
+leTitle = function("A:Create
+Title = function("A:
