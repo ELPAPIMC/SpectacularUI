@@ -24,8 +24,12 @@ local Colors = {
 }
 
 -- Animaciones
-local TweenInfoSmooth = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
-local TweenInfoFast = TweenInfo.new(0.2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+local TweenInfoSmooth = TweenInfo.new(0.5, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
+local TweenInfoFast = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+local TweenInfoFade = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+
+-- Lista para rastrear dropdowns abiertos
+local openDropdowns = {}
 
 -- Crear la ventana principal
 function SpectacularUI:CreateWindow(options)
@@ -39,6 +43,7 @@ function SpectacularUI:CreateWindow(options)
     MainFrame.Size = UDim2.new(0, window.SizeX, 0, window.SizeY)
     MainFrame.Position = UDim2.new(0.5, -window.SizeX / 2, 1, 0) -- Fuera de la pantalla (abajo)
     MainFrame.BackgroundColor3 = Colors.Background
+    MainFrame.BackgroundTransparency = 1 -- Para el efecto de desvanecimiento
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = ScreenGui
 
@@ -78,12 +83,18 @@ function SpectacularUI:CreateWindow(options)
     ToggleCorner.CornerRadius = UDim.new(0, 5)
     ToggleCorner.Parent = ToggleButton
 
-    -- Animación de hover para el botón de cerrar
+    -- Animación de hover y clic para el botón de cerrar
     ToggleButton.MouseEnter:Connect(function()
-        TweenService:Create(ToggleButton, TweenInfoFast, {BackgroundColor3 = Colors.Hover}):Play()
+        TweenService:Create(ToggleButton, TweenInfoFast, {BackgroundColor3 = Colors.Hover, Size = UDim2.new(0, 32, 0, 32)}):Play()
     end)
     ToggleButton.MouseLeave:Connect(function()
-        TweenService:Create(ToggleButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent}):Play()
+        TweenService:Create(ToggleButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(0, 30, 0, 30)}):Play()
+    end)
+    ToggleButton.MouseButton1Down:Connect(function()
+        TweenService:Create(ToggleButton, TweenInfoFast, {Size = UDim2.new(0, 28, 0, 28)}):Play()
+    end)
+    ToggleButton.MouseButton1Up:Connect(function()
+        TweenService:Create(ToggleButton, TweenInfoFast, {Size = UDim2.new(0, 30, 0, 30)}):Play()
     end)
 
     -- Lista de pestañas
@@ -111,15 +122,17 @@ function SpectacularUI:CreateWindow(options)
     local currentTab = nil
     local tabs = {}
 
-    -- Animación de apertura/cierre
+    -- Animación de apertura/cierre con desvanecimiento
     local isOpen = false
     local function ToggleWindow()
         isOpen = not isOpen
         if isOpen then
             TweenService:Create(MainFrame, TweenInfoSmooth, {Position = UDim2.new(0.5, -window.SizeX / 2, 0.5, -window.SizeY / 2)}):Play()
+            TweenService:Create(MainFrame, TweenInfoFade, {BackgroundTransparency = 0}):Play()
             ToggleButton.Text = "X"
         else
             TweenService:Create(MainFrame, TweenInfoSmooth, {Position = UDim2.new(0.5, -window.SizeX / 2, 1, 0)}):Play()
+            TweenService:Create(MainFrame, TweenInfoFade, {BackgroundTransparency = 1}):Play()
             ToggleButton.Text = "^"
         end
     end
@@ -146,16 +159,22 @@ function SpectacularUI:CreateWindow(options)
         TabCorner.CornerRadius = UDim.new(0, 5)
         TabCorner.Parent = TabButton
 
-        -- Animación de hover para el botón de la pestaña
+        -- Animación de hover y clic para el botón de la pestaña
         TabButton.MouseEnter:Connect(function()
             if currentTab ~= tab then
-                TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent}):Play()
+                TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(0, 105, 0, 32)}):Play()
             end
         end)
         TabButton.MouseLeave:Connect(function()
             if currentTab ~= tab then
-                TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Secondary}):Play()
+                TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(0, 100, 0, 30)}):Play()
             end
+        end)
+        TabButton.MouseButton1Down:Connect(function()
+            TweenService:Create(TabButton, TweenInfoFast, {Size = UDim2.new(0, 95, 0, 28)}):Play()
+        end)
+        TabButton.MouseButton1Up:Connect(function()
+            TweenService:Create(TabButton, TweenInfoFast, {Size = UDim2.new(0, 100, 0, 30)}):Play()
         end)
 
         -- Contenido de la pestaña
@@ -191,11 +210,11 @@ function SpectacularUI:CreateWindow(options)
             if currentTab == tab then return end
             if currentTab then
                 currentTab.Content.Visible = false
-                TweenService:Create(currentTab.Button, TweenInfoFast, {BackgroundColor3 = Colors.Secondary}):Play()
+                TweenService:Create(currentTab.Button, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(0, 100, 0, 30)}):Play()
             end
             currentTab = tab
             TabContent.Visible = true
-            TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent}):Play()
+            TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(0, 100, 0, 30)}):Play()
         end)
 
         tab.Button = TabButton
@@ -244,7 +263,7 @@ function SpectacularUI:CreateWindow(options)
 
             local Circle = Instance.new("Frame")
             Circle.Size = UDim2.new(0, 16, 0, 16)
-            Circle.Position = toggle.Enabled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
+            Circle.Position = toggle.Enabled and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2)
             Circle.BackgroundColor3 = Colors.Text
             Circle.Parent = ToggleIndicator
 
@@ -255,15 +274,19 @@ function SpectacularUI:CreateWindow(options)
             ToggleFrame.MouseButton1Click:Connect(function()
                 toggle.Enabled = not toggle.Enabled
                 TweenService:Create(ToggleIndicator, TweenInfoFast, {BackgroundColor3 = toggle.Enabled and Colors.Accent or Colors.Background}):Play()
-                TweenService:Create(Circle, TweenInfoFast, {Position = toggle.Enabled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)}):Play()
+                TweenService:Create(Circle, TweenInfoFast, {Position = toggle.Enabled and UDim2.new(1, -18, 0, 2) or UDim2.new(0, 2, 0, 2)}):Play()
+                TweenService:Create(Circle, TweenInfoFast, {Size = UDim2.new(0, 14, 0, 14)}):Play() -- Efecto de clic
+                task.delay(0.1, function()
+                    TweenService:Create(Circle, TweenInfoFast, {Size = UDim2.new(0, 16, 0, 16)}):Play()
+                end)
                 toggle.Callback(toggle.Enabled)
             end)
 
             ToggleFrame.MouseEnter:Connect(function()
-                TweenService:Create(ToggleFrame, TweenInfoFast, {BackgroundColor3 = Colors.Accent}):Play()
+                TweenService:Create(ToggleFrame, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(1, 0, 0, 32)}):Play()
             end)
             ToggleFrame.MouseLeave:Connect(function()
-                TweenService:Create(ToggleFrame, TweenInfoFast, {BackgroundColor3 = Colors.Secondary}):Play()
+                TweenService:Create(ToggleFrame, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(1, 0, 0, 30)}):Play()
             end)
 
             return toggle
@@ -353,6 +376,13 @@ function SpectacularUI:CreateWindow(options)
                 end
             end)
 
+            SliderFrame.MouseEnter:Connect(function()
+                TweenService:Create(SliderFrame, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(1, 0, 0, 52)}):Play()
+            end)
+            SliderFrame.MouseLeave:Connect(function()
+                TweenService:Create(SliderFrame, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(1, 0, 0, 50)}):Play()
+            end)
+
             return slider
         end
 
@@ -404,6 +434,7 @@ function SpectacularUI:CreateWindow(options)
             DropdownList.Size = UDim2.new(1, 0, 0, 0)
             DropdownList.Position = UDim2.new(0, 0, 1, 5)
             DropdownList.BackgroundColor3 = Colors.Secondary
+            DropdownList.BackgroundTransparency = 1 -- Para el efecto de desvanecimiento
             DropdownList.BorderSizePixel = 0
             DropdownList.Visible = false
             DropdownList.Parent = DropdownFrame
@@ -432,11 +463,34 @@ function SpectacularUI:CreateWindow(options)
 
             local isOpen = false
             local function ToggleList()
+                -- Cerrar otros dropdowns abiertos
+                for _, openDropdown in pairs(openDropdowns) do
+                    if openDropdown ~= dropdown and openDropdown.IsOpen then
+                        openDropdown.Toggle()
+                    end
+                end
+
                 isOpen = not isOpen
-                DropdownList.Visible = isOpen
-                DropdownButton.Text = isOpen and "▲" or "▼"
-                TweenService:Create(DropdownButton, TweenInfoFast, {BackgroundColor3 = isOpen and Colors.Hover or Colors.Accent}):Play()
+                DropdownList.Visible = true
+                if isOpen then
+                    table.insert(openDropdowns, dropdown)
+                    TweenService:Create(DropdownList, TweenInfoFast, {Size = UDim2.new(1, 0, 0, ListLayout.AbsoluteContentSize.Y + 10), BackgroundTransparency = 0}):Play()
+                    DropdownButton.Text = "▲"
+                else
+                    table.remove(openDropdowns, table.find(openDropdowns, dropdown))
+                    TweenService:Create(DropdownList, TweenInfoFast, {Size = UDim2.new(1, 0, 0, 0), BackgroundTransparency = 1}):Play()
+                    task.delay(0.2, function()
+                        if not isOpen then
+                            DropdownList.Visible = false
+                        end
+                    end)
+                    DropdownButton.Text = "▼"
+                end
+                TweenService:Create(DropdownButton, TweenInfoFast, {BackgroundColor3 = isOpen and Colors.Hover or Colors.Accent, Size = isOpen and UDim2.new(0, 32, 0, 32) or UDim2.new(0, 30, 0, 30)}):Play()
             end
+
+            dropdown.IsOpen = isOpen
+            dropdown.Toggle = ToggleList
 
             DropdownButton.MouseButton1Click:Connect(ToggleList)
 
@@ -463,28 +517,75 @@ function SpectacularUI:CreateWindow(options)
                 end)
 
                 OptionButton.MouseEnter:Connect(function()
-                    TweenService:Create(OptionButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent}):Play()
+                    TweenService:Create(OptionButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(1, -8, 0, 27)}):Play()
                 end)
                 OptionButton.MouseLeave:Connect(function()
-                    TweenService:Create(OptionButton, TweenInfoFast, {BackgroundColor3 = Colors.Background}):Play()
+                    TweenService:Create(OptionButton, TweenInfoFast, {BackgroundColor3 = Colors.Background, Size = UDim2.new(1, -10, 0, 25)}):Play()
                 end)
             end
 
             UpdateListSize()
+
+            DropdownFrame.MouseEnter:Connect(function()
+                TweenService:Create(DropdownFrame, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(1, 0, 0, 32)}):Play()
+            end)
+            DropdownFrame.MouseLeave:Connect(function()
+                TweenService:Create(DropdownFrame, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(1, 0, 0, 30)}):Play()
+            end)
+
             return dropdown
+        end
+
+        -- Botón (nueva función)
+        function tab:Button(options)
+            local button = {}
+            button.Text = options.Text or "Button"
+            button.Callback = options.Callback or function() end
+
+            local ButtonFrame = Instance.new("TextButton")
+            ButtonFrame.Size = UDim2.new(1, 0, 0, 30)
+            ButtonFrame.BackgroundColor3 = Colors.Secondary
+            ButtonFrame.Text = button.Text
+            ButtonFrame.TextColor3 = Colors.Text
+            ButtonFrame.TextSize = 14
+            ButtonFrame.Font = Enum.Font.Gotham
+            ButtonFrame.BorderSizePixel = 0
+            ButtonFrame.Parent = TabContent
+
+            local ButtonCorner = Instance.new("UICorner")
+            ButtonCorner.CornerRadius = UDim.new(0, 5)
+            ButtonCorner.Parent = ButtonFrame
+
+            ButtonFrame.MouseButton1Click:Connect(function()
+                button.Callback()
+                TweenService:Create(ButtonFrame, TweenInfoFast, {Size = UDim2.new(1, 0, 0, 28)}):Play()
+                task.delay(0.1, function()
+                    TweenService:Create(ButtonFrame, TweenInfoFast, {Size = UDim2.new(1, 0, 0, 30)}):Play()
+                end)
+            end)
+
+            ButtonFrame.MouseEnter:Connect(function()
+                TweenService:Create(ButtonFrame, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(1, 0, 0, 32)}):Play()
+            end)
+            ButtonFrame.MouseLeave:Connect(function()
+                TweenService:Create(ButtonFrame, TweenInfoFast, {BackgroundColor3 = Colors.Secondary, Size = UDim2.new(1, 0, 0, 30)}):Play()
+            end)
+
+            return button
         end
 
         -- Abrir la primera pestaña por defecto
         if #tabs == 1 then
             currentTab = tab
             TabContent.Visible = true
-            TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent}):Play()
+            TweenService:Create(TabButton, TweenInfoFast, {BackgroundColor3 = Colors.Accent, Size = UDim2.new(0, 100, 0, 30)}):Play()
         end
 
         return tab
     end
 
-    -- Función para mostrar notificaciones
+    -- Función para mostrar notificaciones con apilamiento
+    local notificationOffset = 0
     function window:Notify(options)
         local notify = {}
         notify.Title = options.Title or "Notification"
@@ -493,8 +594,9 @@ function SpectacularUI:CreateWindow(options)
 
         local NotifyFrame = Instance.new("Frame")
         NotifyFrame.Size = UDim2.new(0, 250, 0, 80)
-        NotifyFrame.Position = UDim2.new(1, 0, 0, 10)
+        NotifyFrame.Position = UDim2.new(1, 0, 0, 10 + notificationOffset)
         NotifyFrame.BackgroundColor3 = Colors.Background
+        NotifyFrame.BackgroundTransparency = 1 -- Para el efecto de desvanecimiento
         NotifyFrame.BorderSizePixel = 0
         NotifyFrame.Parent = ScreenGui
 
@@ -525,17 +627,34 @@ function SpectacularUI:CreateWindow(options)
         NotifyText.TextWrapped = true
         NotifyText.Parent = NotifyFrame
 
-        -- Animación de entrada
-        TweenService:Create(NotifyFrame, TweenInfoSmooth, {Position = UDim2.new(1, -260, 0, 10)}):Play()
+        -- Animación de entrada con rebote
+        TweenService:Create(NotifyFrame, TweenInfoSmooth, {Position = UDim2.new(1, -260, 0, 10 + notificationOffset)}):Play()
+        TweenService:Create(NotifyFrame, TweenInfoFade, {BackgroundTransparency = 0}):Play()
+
+        -- Ajustar el offset para la próxima notificación
+        notificationOffset = notificationOffset + 90
 
         -- Animación de salida después de la duración
         task.delay(notify.Duration, function()
-            TweenService:Create(NotifyFrame, TweenInfoSmooth, {Position = UDim2.new(1, 0, 0, 10)}):Play()
-            task.delay(0.3, function()
+            TweenService:Create(NotifyFrame, TweenInfoSmooth, {Position = UDim2.new(1, 0, 0, 10 + notificationOffset - 90)}):Play()
+            TweenService:Create(NotifyFrame, TweenInfoFade, {BackgroundTransparency = 1}):Play()
+            task.delay(0.5, function()
                 NotifyFrame:Destroy()
+                notificationOffset = notificationOffset - 90
             end)
         end)
     end
+
+    -- Cerrar dropdowns al hacer clic fuera
+    UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            for _, dropdown in pairs(openDropdowns) do
+                if dropdown.IsOpen then
+                    dropdown.Toggle()
+                end
+            end
+        end
+    end)
 
     -- Abrir la ventana al iniciar
     ToggleWindow()
