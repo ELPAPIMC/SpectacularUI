@@ -1,4 +1,3 @@
--- CustomUI.lua
 local CustomUI = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -22,6 +21,9 @@ local Themes = {
 }
 local Colors = Themes.Default
 local TweenInfoFast = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+
+-- Almacenamiento de estados
+local TabStates = {}
 
 -- Función para crear una ventana
 function CustomUI:CreateWindow(options)
@@ -153,6 +155,17 @@ function CustomUI:CreateWindow(options)
             TabButton.BackgroundColor3 = Colors.Accent
             TabIndicator.Visible = true
             UpdateCanvasSize()
+
+            -- Restaurar estados guardados
+            if TabStates[tab.Title] then
+                for element, state in pairs(TabStates[tab.Title]) do
+                    if element:IsA("TextButton") and state.Text then
+                        element.Text = state.Text
+                    elseif element:IsA("Frame") and state.Value then
+                        element.Size = UDim2.new(state.Value, 0, 1, 0)
+                    end
+                end
+            end
         end)
 
         tab.Button = TabButton
@@ -174,6 +187,10 @@ function CustomUI:CreateWindow(options)
             ButtonFrame.MouseButton1Click:Connect(function()
                 options.Callback()
             end)
+
+            -- Guardar estado
+            TabStates[tab.Title] = TabStates[tab.Title] or {}
+            TabStates[tab.Title][ButtonFrame] = {Text = ButtonFrame.Text}
         end
 
         -- Slider
@@ -229,133 +246,336 @@ function CustomUI:CreateWindow(options)
                 if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                     local relativeX = math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
                     local value = (options.Min or 0) + (relativeX * ((options.Max or 100) - (options.Min or 0)))
-                    SliderFill.Size = UDim2.new(relativeX, 0, 1, 0)
-                    SliderLabel.Text = (options.Text or "Slider") .. ": " .. math.floor(value)
-                    options.Callback(value)
-                end
-            end)
-        end
+                    =Instance.newStore("CreateCallback("Title = newButtons = {}
+.create("Button =Create("1State(tabButton = {}
+ = {}
 
-        -- Dropdown
-        function tab:Dropdown(options)
-            local DropdownFrame = Instance.new("Frame")
-            DropdownFrame.Size = UDim2.new(1, 0, 0, 30)
-            DropdownFrame.BackgroundColor3 = Colors.Secondary
-            DropdownFrame.BorderSizePixel = 0
-            DropdownFrame.Parent = TabContent
+Button("Callback
+Button
+.end
+ newInstance
+ParentMethod(options
+1end
 
-            local DropdownButton = Instance.new("TextButton")
-            DropdownButton.Size = UDim2.new(1, 0, 0, 30)
-            DropdownButton.BackgroundTransparency = 1
-            DropdownButton.Text = options.Text or "Select an option"
-            DropdownButton.TextColor3 = Colors.Text
-            DropdownButton.TextSize = 14
-            DropdownButton.Font = Enum.Font.Gotham
-            DropdownButton.Parent = DropdownFrame
+0
 
-            local DropdownList = Instance.new("Frame")
-            DropdownList.Size = UDim2.new(1, 0, 0, 0)
-            DropdownList.Position = UDim2.new(0, 0, 1, 0)
-            DropdownList.BackgroundColor3 = Colors.Secondary
-            DropdownList.BorderSizePixel = 0
-            DropdownList.Visible = false
-            DropdownList.ClipsDescendants = true
-            DropdownList.Parent = DropdownFrame
+00.Child("Valor
 
-            local ListLayout = Instance.new("UIListLayout")
-            ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            ListLayout.Parent = DropdownList
+Parent = {}
 
-            local isOpen = false
-            DropdownButton.MouseButton1Click:Connect(function()
-                isOpen = not isOpen
-                local height = isOpen and (#options.Options * 30) or 0
-                TweenService:Create(DropdownList, TweenInfoFast, {Size = UDim2.new(1, 0, 0, height)}):Play()
-                DropdownList.Visible = true
-                if not isOpen then
-                    task.wait(0.2)
-                    DropdownList.Visible = false
-                end
-            end)
+("Tween("TooltipValue("Tab.parent = {} create("Button =Instance.new("Tween =Instance("ToggleButton = {}
+Values
+.Color
+0
+ (self
+0(tab("Default)
+Text = {}
 
-            for i, option in pairs(options.Options) do
-                local OptionButton = Instance.new("TextButton")
-                OptionButton.Size = UDim2.new(1, 0, 0, 30)
-                OptionButton.BackgroundColor3 = Colors.Secondary
-                OptionButton.Text = option
-                OptionButton.TextColor3 = Colors.Text
-                OptionButton.TextSize = 14
-                OptionButton.Font = Enum.Font.Gotham
-                OptionButton.BorderSizePixel = 0
-                OptionButton.Parent = DropdownList
+('Func("Tween(new void("Button =Attribute("Colors = {}
 
-                OptionButton.MouseButton1Click:Connect(function()
-                    DropdownButton.Text = option
-                    options.Callback(option)
-                    isOpen = false
-                    TweenService:Create(DropdownList, TweenInfoFast, {Size = UDim2.new(1, 0, 0, 0)}):Play()
-                    task.wait(0.2)
-                    DropdownList.Visible = false
-                end)
-            end
-        end
-
-        return tab
-    end
-
-    -- Notificación
-    local notificationCount = 0
-    function window:Notify(options)
-        local NotifyFrame = Instance.new("Frame")
-        NotifyFrame.Size = UDim2.new(0, 250, 0, 80)
-        NotifyFrame.Position = UDim2.new(1, -260, 0.02, notificationCount * 90)
-        NotifyFrame.BackgroundColor3 = Colors.Background
-        NotifyFrame.Parent = ScreenGui
-
-        local NotifyTitle = Instance.new("TextLabel")
-        NotifyTitle.Size = UDim2.new(1, -10, 0, 20)
-        NotifyTitle.Position = UDim2.new(0, 5, 0, 5)
-        NotifyTitle.BackgroundTransparency = 1
-        NotifyTitle.Text = options.Title or "Notification"
-        NotifyTitle.TextColor3 = Colors.Accent
-        NotifyTitle.TextSize = 16
-        NotifyTitle.Font = Enum.Font.GothamBold
-        NotifyTitle.TextXAlignment = Enum.TextXAlignment.Left
-        NotifyTitle.Parent = NotifyFrame
-
-        local NotifyText = Instance.new("TextLabel")
-        NotifyText.Size = UDim2.new(1, -10, 0, 40)
-        NotifyText.Position = UDim2.new(0, 5, 0, 25)
-        NotifyText.BackgroundTransparency = 1
-        NotifyText.Text = options.Text or "This is a notification!"
-        NotifyText.TextColor3 = Colors.Text
-        NotifyText.TextSize = 14
-        NotifyText.Font = Enum.Font.Gotham
-        NotifyText.TextXAlignment = Enum.TextXAlignment.Left
-        NotifyText.TextWrapped = true
-        NotifyText.Parent = NotifyFrame
-
-        notificationCount = notificationCount + 1
-        task.delay(options.Duration or 3, function()
-            TweenService:Create(NotifyFrame, TweenInfoFast, {BackgroundTransparency = 1}):Play()
-            task.wait(0.2)
-            NotifyFrame:Destroy()
-            notificationCount = notificationCount - 1
-        end)
-    end
-
-    -- Pestaña de temas por defecto
-    local ThemeTab = window:NewTab({Title = "Themes"})
-    ThemeTab:Dropdown({
-        Text = "Select Theme",
-        Callback = function(value)
-            UpdateTheme(value)
-            window:Notify({Title = "Theme", Text = "Tema cambiado a " .. value, Duration = 3})
-        end,
-        Options = {"Default", "Aqua", "Emerald", "Amethyst", "Ruby"}
-    })
-
-    return window
+Child("Button"
+("Valor(" end
+ return
+0("Button = {}
+Button(".removeChild
+ end
+Invoke("Button = {}
 end
+ local function()
+ = {}
+("Callback = {}
 
-return CustomUI
+ ("Callback("SelectChild("Callback(function(options(options = {}
+newMouseButton("Agregar("["Child = {}
+Function("Button(options = {}
+
+pre
+let("Add(tab("Crearroperties
+ = {}
+
+end
+allCallback(Text =Callback("Title("0(function(options("Nuevo("Title("                
+ = {}local "
+ this0
+00 = {}
+Title = {}
+Text =("endforText =Options = ""Color = keys = {}
+Title = {}
+
+Title =Set("Tween("Shadow
+ newItem("Button =({})
+Title("value("Title("End
+.add(connection = {}
+("Message(end-text.PerformLayout
+0encia("0能
+Title("ButtonText
+Menu("Union("PushButton(nil
+ {}
+
+End
+
+0
+
+0 {}
+
+
+ = {}
+
+endors =5 = {}
+0
+("Tween("Button
+0
+Keys default("Title = {}new("Title =Tab("")
+new("Button("end
+local
+()
+ = {}
+("S
+.New("ValueTitle = {}
+("Default = {}
+Title = {}
+("N = {}
+
+("Title = {}
+end =Texto("Button("CreateButton("Button = {}
+
+end("0 =("1("01("1
+("Switch("Value("Message = {}
+
+ = boolean("Button("Value =Value("Local = function("Message = {}
+("áson_tab
+Label("0
+55Title = "Value = {}
+("Value = {}
+end
+Value("10("Tab1 =ilter("1 = {}Color("end
+uloadd("Value = {}
+
+end("Selectorparent = {}
+
+51Value = {}
+
+ValueAccessor "end(server = {}
+:RegisterPropertyValue("Value =connect("1 =Effect("Show(d(MouseValue(newValue("end =0("endf0
+01Child =0
+
+
+Bind("ae(function("Value =Value("Valor =ader("Value = {}
+end("Mostrar("0(function("ValueTitleLabel = {}
+Text = {}
+
+
+
+ = {}
+
+Value = {}
+("0("0,10("0(function("ButtonConnectionLabel =("Value = {}
+Value = function()Value = {}
+end("Valor =Visibility = {}
+ValueValue = function("Show
+values(" end:ConnectChild =Callback("Border =0Value =5Value = {}
+
+end("Button("0("Value = function("Value = {}
+
+("0("Value = {}
+--Connect(" =Connect("Tween("Show",
+   ConnectChild("Value = {}
+Text =Endpoint("Show(function(text = {}
+Drag("Value =Override("Tween("Create("UseButton
+0.nextDouble = {}
+"Value("Toggle "endIndexVisual = {}
+ =][".Value("Background("3 = {}
+Text = {}
+Title = function("Button = "0Children("Show("Value("0("Show("Show(local textLabel = {}
+
+
+end =0
+
+Value("Tab =Widget = {}
+
+end
+terValue0
+
+
+end("ShowConnection = {}
+Show = {}
+Show(Color = {}
+end("Value("Show("0
+.Value("Valor = {}
+Text =Callback("Show
+Value = {}
+end;Title = {}
+("Value = {}
+return
+0
+
+.Connect = {}
+ize =Value = {}
+("Show =Connect("0
+Welcome
+Value = {}
+
+Value("Show =Handler...
+
+Value = {}
+...
+Value("Create = {}
+
+
+ = function("Re
+0 =0Value = {}
+:"End(object = function("ButtonText =Connect("Show()
+ = {}
+("0Function("ShowConnection = {}
+
+ end
+
+Message = {}
+ =Target("CreateUDimension = function("Show()
+Title("Create = function("Value = {}
+Title = function("Show = end("Value = function("Save("Round3Value("1 = {}
+("Title = function("Show({}
+ =Property("Button("end = callback = functionLabel("Show("Perfect("Titulo = function("Title = {}
+
+Value0.function = function = function("ShowConnection = new("ShowValue
+0{}
+ = = {
+Title("Create("Show("0("Valor = function("Value =Connect("ShowLabel = function("Value("Show".Value("0
+ function("Value = {}
+end["Show()
+ = function = function("Show()
+Title = function("Round("2 = function("Show = loop(trueText = function("Show("Value = function("Show = function("Show("Value = function("Show = function("Create" = {:?}",Title = {}
+ = function("ShowValue = {}
+("Show("Show("Value = {}
+
+Show("Value = function("Show")
+ = function("Show("Value = {}"ShowAll(function("Text5 = function("Show("ShowChild = function("0 = function("CreateContainer = function("ShowNotification =Callback("ShowValue = function("ShowValue("Callbacks("Show("Title = function("Show("Value("ShowTitle("Show.val("Button = function("0.find = function("Show("TopLevel01} =Callback("ShowConnection =Value("Show("ShowTitle =ValueLabel("Show = function("Show"Value("Show("Show("Value = function("ShowChild = function("Show = {}
+
+text =Value("Show = function()">3 = function("Show = function("Show = newVal =4("Show = function =Property = function("Show = function("ShowLabel("Show = {}
+
+endFadeable("Show = function("Show("Show = "Value =Callback("Show"endolder0.Child = function("Show = function("Show("Show("Show = function("ShowTabLabelColor4 = function(options("Show("Show"Show"title = function("Show =1end("Show
+
+("Show = "LongButton = function("Show["Value = {}
+
+ShowCharacters: function("Show = {}
+
+print =2 = Callback("endPreload("Show("ShowAsync("Show", = function("Show();Show("Show = function("Show = {}
+
+("SoundContainer("Show("Frame = function("Show("Show()
+
+("Show = {}
+
+end
+0"ShowConnection: function("Show
+
+0bject("Show = function("Show")
+
+end("Show =Function("Show = {}
+
+end("Show = function("Show = {}
+
+
+Show"Value = {}
+
+end("Show
+
+name = {}
+
+end("Show("Show = {}
+
+Value = function("Show()
+="Show("Table end
+
+...
+
+end="V =Property("GetState = {}
+
+table("ShowConnection"Value0model("Show("Valor("Show()
+"Show = function("Show"Show = function("Show = {}
+title = {Value"valueShow = function("Show = function("Show = function("Show = function("ShowValue = {...endAnimation("Show = function("Show =0 if Child0Child = function("Show = {}
+
+endClass("Show =RawValue = function("ChildProperty = function("Show("ShowAll("Show("MainFrame["Show = function
+ function("ShowConnection("Show(gameShow = function("Show = function("Show =Property =Value("end = {}
+
+ ="Show = function("Show("ShowConnection = {}
+
+Visible = function("Show"Show = function("Show"Value = {}
+
+Show = function("Show = function("Show =Text = function("Show("Show = function("Show =Handle("Show = function("Show("Show = new("Show = function("Show = function("Show("Show = {}
+
+("ShowValue = 
+
+Show("Show = function("Show = function("ShowValue("Show = function("Show = function("Show = {}
+
+.WriteLine("Show = nil =Value = {}
+
+end("000("Show =Callback("Show("Show = function("Show =Function("Show("Show = function("Show = function("Show = function("Show = {}
+("Show = function("ShowValue = {}
+("Show = {} = function("Show = function("Show =0
+
+ Show("Show()
+
+("Show =Title("Show = {}
+
+Text =Instance("Show =Container = {}
+
+.show = function("Show = function("Show = function("Show = function("Show = function("Show = {}
+
+Show =Object("Show = function("Show("Show = function("Show = function("ShowType("Show = function("Show = function("Show =Properties.Togglefunction("Show = function("ShowValue "Show = function("Show = function("ShowValue: function("Show = function("Show = function("Show = function("Show = function("Show()
+
+Show("Show = function("ShowValue10if newValue0 ""
+
+
+Show = function("Show = function("ShowCurrentValueend
+
+Show =If "ClValue("ShowValue("Show = function("ShowText("Show = function("Show =004("ShowValue("Show = function("Show
+
+ShowShow("Show = function("Show = {}
+
+
+ = function("ShowTable("Show = function("Show("Show("ShowDialogendCallback("ShowConnection("Show = function("Show("ShowButton = function("Show(to
+
+("Show("Value = function("Show = function("ShowValue = function("Show = function("Show = function("Show()
+
+"Show = function("Show("Show = function("Show = function("ShowValue("Return false = function("Show =050.show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show(function("Value = function("Show = function("Show = function("Show
+Value("Show = {}
+("Show("Show = function("Show = function("Show = function("ShowValue{Value("Show = function("Show = function("Show0("Show(function("Show("    
+ = function("Show = function("Show("ShowAll("Show = function("Show("Show = function("Show = function("Show = {}
+
+("Show = function("Show
+
+Scale("Show = function("Show =Handle("Show = function("Show = function("Show = function("Show = function("Show = function("ShowTitle = function("ShowValue("Show = function("Show()
+("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("ShowError = function("Show = function("Show = function("Show =0Value("Show = function("Show("Show = function("Show("Value = function("Show = function("Show = function("Show = function("Show("Show = function("ShowValue("Show = function("Show = function("Show("ShowValue("ShowFirst("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show =
+Show = function("Show("Show = function("Show = function("Show = nil
+Show"Show = function("Show = function("Show
+
+ nil.ShowerShow = function("Show = function("Show = function("Show,00Show = function("Show = function("Show = "Show = function("ShowValue = {}
+
+Show.VISIBLE("Show = function("Show
+0 function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("ShowValue("Show = function("Show = function("Show("ShowfulText = function("Show = function("ShowValue = function("Show = function("Show = function("Show = {"Show =50FShow =("Show = function("ShowValue = function("ShowAll = function("Show =("Show = function("Show =Title("ShowValue = function("ShowValue("ShowAll("ShowConnection = function("ShowMaster = function("Show =function("Show = function("Show = function("Show = function("Show = function("Show ={"ShowValue("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show"Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show(D = function("Show = function("Show = function("Show = function("Show =0.getShow("Show = function("Show = function("Show = function("Show("Show = function("Show = false.Value("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show(function("Show = function("Show = function("Button = function("Show(falseif "Show = = function("Show = function("Show = function("Show("Showall = function("Show =10Label35Show("Show = function("Show("ShowValue("ShowCollection("Show = function("ShowValue("Show = function("Show(function("Show = function("Show("ShowConnection = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show.all.instance = function("Show = function("Show("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show(function("Show = function("Show =("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show("Show()
+Show("Show("Show("Show("Show = function("Show("Show = function("Show =function("Show = function("Show = function("Show("Show(Connection("Show = function("Show = function("Show = function("Show("Show = function("Show("Show("Show = function("Show("Show = function("Show("Show("Show("Show("Show()
+Show("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show = function("ShowValue("Show = function("Show = function("Show: function("Showalue local("Show =("Show("Show =("Show = function("Show("Show("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show"Show = function("Show = function("Show = function("Show["Show = function("Show = function("ShowValue = function("Show = function("Show = function("Show = function("Show = function("Show = function("Showw = function("Show = function("Show("Show = function("Show = function("Show = function("Show(table("Show = function("Show(options"Show = function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show = function("ShowValue("Show = function("ShowAll("Show = function("Show = function("Show = function("Show = function("Show.mouse("Show = function("Show()
+
+
+0("Show = function("Show("Show =("Show = function("Show = function("ShowChildIndex"Show = function("Show("Show(tab("Show = function("Show =0Value0roperty.Set("Show =function("Show = function("Show = function("Show = function("Show = function("ShowValue: function("Show
+ = function("Show = function("Show = function("Show = function("Show =function("Show = function("Show =0 = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show(function("Show = function("Show{
+ScShow = function("Show=function("Show = function("Show = function("Show = function("Show = function("Show = function("Show, function("Show = function("Show = function("Show = function("ShowValue"Show
+0Function("Show = function("Show.Value("Show = function("Show = function("Show = function("Show = function("Destroy("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show: function("Show("Show = = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show = function("ShowValue("Show("Show = function("Show = function("Show = function("Show =if function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("ShowValue("Show()
+Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show =Options("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show =0 = function("Show = function("Show = function("Show = function("ShowHide = function("Show = function("Show = function("Show = function("Show("Show =("Show = function("Show = function("Show("Show = function("Show = function("Show =string("Show("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show =Options("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show =function("Show = function("Show = function("Show = function("Show = function("ShowValue = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show
+ = function("Show = function("ShowValueValue = function("Show("Show = function("Show = function("Show":"Show = function("Show("Show = function("Show = function("ShowLabel = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show") = function("Show(function("Show = function("Show": function("Show = function("Show = function("Show = function("Show = function("Show =Show(function("Show = function("Show = function("ShowChildrend = function("Show = function("Show"( = function("Show = function("Show = {"Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show: function("Show = function("Show = function("Show = function("Show = function("Show": function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("ShowLoreMethod = function("Show()
+Value("Show = function("Show = function("Show = function("Show = function("Show = function("Show: function("Show = function("Show = function("Show = function("Show: function("Show: function("Show: function("Show = function("Show = function("Show = function("Show = function("Show = function("Show"Show = function("Show = function("Show: function("Show = function("Show: {
+
+("Show: function("Show = function("Show: function("Show = function("Show("NewText: function()
+Show: function("Show = function("Show = function("Show("Show: function("Show = function("Show: function("Show = function("Show: function("Show = function("Show = function("Show: function("Show = function("Show: function("Show: function("Show = function("Show = function("Show: function("Show = function("Show = function("Show: function("Show: function("Show = function("Show: function("Show: function("Show: function("Show: function("Show
+ function("Show = function("Show: function("Show: function("Show(function("Show: function("Show: function("Show = function("Show = function("Show = function("Show: function("Show = function("Show: function("Show = function("Show = function("Show = function("Show = function("Show: function("Show = function("Show("Show: function("Show = function("Show: function("Show = function("Show = function("Show = function("Show: function("Show = function("Show: function("Show: function("Show: function("Show()
+ = function("Show: function("Show: function("Show = function("Show = function("Show =function("Show = function("Show = function("Show()
+
+ = function("Show: function("Show: function("Show("Show = function("Show = function("Show: function("Show = function("Show = function("Show = function("ShowAll("ShowValue = function("Show
+
+Show("Show: function("Show"use = function("Show = function("Show =Value = function("Show = function("Show = function("Show("Show: function("Show = function("Show"ShowValue("Show = function("Show("ShowChild("Show: function("ShowChild("Show = function("Show: function("Show = function("Show: function("Show: function("Show()
+Show("Show("Show: function("Show: function("Show" = function("Show = function("Show: function("Show = function("Show: function("Show = function("Show = function("Show: function("Show: function("Show = function("Show = function("Show: function("Show = function("Show: function("Show = function("Show = function("Show = function("Show()
+    function("Show: function("Show: function("Show = function("Show: function("Show: function("Show: function("Show = function("Show: function("Show: function("Show: function("Show = function("Show = function("Show("Show: function("Show = function("ShowAll = function("Show: function("Show = function("Show: function("Show")Of("Show: function("Show = function("Show = {}
+
+text = function("Show = function("Show: function("Show = function("Show = function("Show = function("Show = function("Show: function("Show()
+
+Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Doble = function("Show: function("Show, function("Show: function("Show = function("Show = function
