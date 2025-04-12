@@ -1,5 +1,4 @@
 local SpectacularUI = {}
-
 -- Servicios de Roblox
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -21,7 +20,6 @@ local Themes = {
     Amethyst = {Background = Color3.fromRGB(40, 30, 50), Accent = Color3.fromRGB(200, 100, 255), Text = Color3.fromRGB(240, 220, 255), Secondary = Color3.fromRGB(60, 50, 80), Hover = Color3.fromRGB(220, 120, 255)},
     Ruby = {Background = Color3.fromRGB(40, 20, 20), Accent = Color3.fromRGB(255, 50, 50), Text = Color3.fromRGB(255, 220, 220), Secondary = Color3.fromRGB(80, 40, 40), Hover = Color3.fromRGB(255, 80, 80)}
 }
-
 local Colors = Themes.Default
 local TweenInfoFast = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 
@@ -38,7 +36,6 @@ function SpectacularUI:CreateWindow(options)
     MainFrame.BackgroundColor3 = Colors.Background
     MainFrame.BorderSizePixel = 0
     MainFrame.Parent = ScreenGui
-
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(0, 10)
     UICorner.Parent = MainFrame
@@ -64,7 +61,6 @@ function SpectacularUI:CreateWindow(options)
     TabContainer.ScrollBarImageColor3 = Colors.Accent
     TabContainer.ScrollingDirection = Enum.ScrollingDirection.X
     TabContainer.Parent = MainFrame
-
     local TabListLayout = Instance.new("UIListLayout")
     TabListLayout.FillDirection = Enum.FillDirection.Horizontal
     TabListLayout.Padding = UDim.new(0, 10)
@@ -93,24 +89,23 @@ function SpectacularUI:CreateWindow(options)
         TitleLabel.BackgroundColor3 = Colors.Secondary
         TitleLabel.TextColor3 = Colors.Text
         TabContainer.ScrollBarImageColor3 = Colors.Accent
-        for _, tab in pairs(tabs) do
-            tab.Button.BackgroundColor3 = (tab == currentTab) and Colors.Accent or Colors.Secondary
-            tab.Button.TextColor3 = Colors.Text
-            tab.Button.TabIndicator.BackgroundColor3 = Colors.Accent
-            for _, child in pairs(tab.Content:GetChildren()) do
-                if child:IsA("Frame") or child:IsA("TextButton") then
-                    child.BackgroundColor3 = Colors.Secondary
-                    if child:FindFirstChild("Indicator") then
-                        child.Indicator.BackgroundColor3 = Colors.Accent
-                    end
-                    for _, subChild in pairs(child:GetChildren()) do
-                        if subChild:IsA("TextLabel") or subChild:IsA("TextButton") then
-                            subChild.TextColor3 = Colors.Text
-                        end
-                    end
+
+        -- Función recursiva para actualizar todos los elementos
+        local function UpdateChildren(instance)
+            if instance:IsA("Frame") or instance:IsA("TextButton") then
+                instance.BackgroundColor3 = Colors.Secondary
+                if instance:FindFirstChild("Indicator") then
+                    instance.Indicator.BackgroundColor3 = Colors.Accent
                 end
+                for _, child in pairs(instance:GetChildren()) do
+                    UpdateChildren(child)
+                end
+            elseif instance:IsA("TextLabel") or instance:IsA("TextButton") then
+                instance.TextColor3 = Colors.Text
             end
         end
+
+        UpdateChildren(MainFrame)
     end
 
     -- Crear nueva pestaña
@@ -232,11 +227,13 @@ function SpectacularUI:CreateWindow(options)
                     dragging = true
                 end
             end)
+
             SliderButton.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     dragging = false
                 end
             end)
+
             UserInputService.InputChanged:Connect(function(input)
                 if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
                     local relativeX = math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
@@ -248,7 +245,7 @@ function SpectacularUI:CreateWindow(options)
             end)
         end
 
-        -- Dropdown (nueva implementación)
+        -- Dropdown
         function tab:Dropdown(options)
             local DropdownFrame = Instance.new("Frame")
             DropdownFrame.Size = UDim2.new(1, 0, 0, 30)
@@ -318,7 +315,6 @@ function SpectacularUI:CreateWindow(options)
             TabButton.BackgroundColor3 = Colors.Accent
             TabIndicator.Visible = true
         end
-
         return tab
     end
 
@@ -356,6 +352,8 @@ function SpectacularUI:CreateWindow(options)
 
         notificationCount = notificationCount + 1
         task.delay(options.Duration or 3, function()
+            TweenService:Create(NotifyFrame, TweenInfoFast, {BackgroundTransparency = 1}):Play()
+            task.wait(0.2)
             NotifyFrame:Destroy()
             notificationCount = notificationCount - 1
         end)
