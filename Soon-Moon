@@ -1,581 +1,273 @@
-local CustomUI = {}
+-- XenoUILibrary.lua
+-- A modern UI library for Roblox scripts, optimized for Xeno Executor
+-- Created for GitHub distribution
+
+local XenoUILibrary = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
 
--- Configuración inicial
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "CustomUI"
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-ScreenGui.ResetOnSpawn = false
-ScreenGui.IgnoreGuiInset = true
+-- Create a window with smooth animation
+function XenoUILibrary.CreateWindow(title, size, position)
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    screenGui.ResetOnSpawn = false
 
--- Temas disponibles
-local Themes = {
-    Default = {Background = Color3.fromRGB(30, 30, 30), Accent = Color3.fromRGB(255, 85, 85), Text = Color3.fromRGB(255, 255, 255), Secondary = Color3.fromRGB(50, 50, 50), Hover = Color3.fromRGB(255, 120, 120)},
-    Aqua = {Background = Color3.fromRGB(20, 30, 40), Accent = Color3.fromRGB(0, 200, 255), Text = Color3.fromRGB(220, 240, 255), Secondary = Color3.fromRGB(40, 60, 80), Hover = Color3.fromRGB(50, 220, 255)},
-    Emerald = {Background = Color3.fromRGB(20, 40, 30), Accent = Color3.fromRGB(0, 255, 150), Text = Color3.fromRGB(220, 255, 230), Secondary = Color3.fromRGB(40, 80, 60), Hover = Color3.fromRGB(50, 255, 180)},
-    Amethyst = {Background = Color3.fromRGB(40, 30, 50), Accent = Color3.fromRGB(200, 100, 255), Text = Color3.fromRGB(240, 220, 255), Secondary = Color3.fromRGB(60, 50, 80), Hover = Color3.fromRGB(220, 120, 255)},
-    Ruby = {Background = Color3.fromRGB(40, 20, 20), Accent = Color3.fromRGB(255, 50, 50), Text = Color3.fromRGB(255, 220, 220), Secondary = Color3.fromRGB(80, 40, 40), Hover = Color3.fromRGB(255, 80, 80)}
-}
-local Colors = Themes.Default
-local TweenInfoFast = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = size or UDim2.new(0, 400, 0, 300)
+    mainFrame.Position = position or UDim2.new(0.5, -200, 0.5, -150)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    mainFrame.ClipsDescendants = true
+    mainFrame.Parent = screenGui
 
--- Almacenamiento de estados
-local TabStates = {}
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = mainFrame
 
--- Función para crear una ventana
-function CustomUI:CreateWindow(options)
-    local window = {}
-    window.Title = options.Title or "Custom UI"
-    window.SizeX = options.SizeX or 400
-    window.SizeY = options.SizeY or 500
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1, 0, 0, 40)
+    titleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    titleBar.Parent = mainFrame
 
-    -- Marco principal
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, window.SizeX, 0, window.SizeY)
-    MainFrame.Position = UDim2.new(0.5, -window.SizeX / 2, 0.5, -window.SizeY / 2)
-    MainFrame.BackgroundColor3 = Colors.Background
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Parent = ScreenGui
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 10)
-    UICorner.Parent = MainFrame
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Text = title or "Xeno UI"
+    titleLabel.Size = UDim2.new(1, -10, 1, 0)
+    titleLabel.Position = UDim2.new(0, 10, 0, 0)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    titleLabel.TextScaled = true
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.Parent = titleBar
 
-    -- Título
-    local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Size = UDim2.new(1, 0, 0, 40)
-    TitleLabel.BackgroundColor3 = Colors.Secondary
-    TitleLabel.Text = window.Title
-    TitleLabel.TextColor3 = Colors.Text
-    TitleLabel.TextSize = 18
-    TitleLabel.Font = Enum.Font.GothamBold
-    TitleLabel.BorderSizePixel = 0
-    TitleLabel.Parent = MainFrame
+    local contentFrame = Instance.new("Frame")
+    contentFrame.Size = UDim2.new(1, 0, 1, -40)
+    contentFrame.Position = UDim2.new(0, 0, 0, 40)
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.Parent = mainFrame
 
-    -- Contenedor de pestañas
-    local TabContainer = Instance.new("ScrollingFrame")
-    TabContainer.Size = UDim2.new(1, -20, 0, 40)
-    TabContainer.Position = UDim2.new(0, 10, 0, 50)
-    TabContainer.BackgroundTransparency = 1
-    TabContainer.BorderSizePixel = 0
-    TabContainer.ScrollBarThickness = 5
-    TabContainer.ScrollBarImageColor3 = Colors.Accent
-    TabContainer.ScrollingDirection = Enum.ScrollingDirection.X
-    TabContainer.Parent = MainFrame
-    local TabListLayout = Instance.new("UIListLayout")
-    TabListLayout.FillDirection = Enum.FillDirection.Horizontal
-    TabListLayout.Padding = UDim.new(0, 10)
-    TabListLayout.Parent = TabContainer
+    local uiListLayout = Instance.new("UIListLayout")
+    uiListLayout.Padding = UDim.new(0, 8)
+    uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    uiListLayout.Parent = contentFrame
 
-    local function UpdateTabCanvas()
-        TabContainer.CanvasSize = UDim2.new(0, TabListLayout.AbsoluteContentSize.X + 20, 0, 0)
-    end
-    TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateTabCanvas)
+    local uiPadding = Instance.new("UIPadding")
+    uiPadding.PaddingLeft = UDim.new(0, 10)
+    uiPadding.PaddingRight = UDim.new(0, 10)
+    uiPadding.Parent = contentFrame
 
-    -- Contenedor de contenido
-    local ContentContainer = Instance.new("Frame")
-    ContentContainer.Size = UDim2.new(1, -20, 1, -100)
-    ContentContainer.Position = UDim2.new(0, 10, 0, 90)
-    ContentContainer.BackgroundTransparency = 1
-    ContentContainer.ClipsDescendants = true
-    ContentContainer.Parent = MainFrame
+    -- Opening animation
+    mainFrame.Position = UDim2.new(mainFrame.Position.X.Scale, mainFrame.Position.X.Offset, 1, 0)
+    TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = position or UDim2.new(0.5, -200, 0.5, -150)
+    }):Play()
 
-    local currentTab = nil
-    local tabs = {}
-
-    -- Actualizar tema
-    local function UpdateTheme(themeName)
-        Colors = Themes[themeName] or Themes.Default
-        MainFrame.BackgroundColor3 = Colors.Background
-        TitleLabel.BackgroundColor3 = Colors.Secondary
-        TitleLabel.TextColor3 = Colors.Text
-        TabContainer.ScrollBarImageColor3 = Colors.Accent
-        for _, tab in pairs(tabs) do
-            tab.Button.BackgroundColor3 = (tab == currentTab) and Colors.Accent or Colors.Secondary
-            tab.Button.TextColor3 = Colors.Text
-            if tab.Button:FindFirstChild("TabIndicator") then
-                tab.Button.TabIndicator.BackgroundColor3 = Colors.Accent
-            end
-        end
+    -- Draggable window
+    local dragging, dragInput, dragStart, startPos
+    local function updateInput(input)
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 
-    -- Crear nueva pestaña
-    function window:NewTab(options)
-        local tab = {}
-        tab.Title = options.Title or "Tab"
-
-        local TabButton = Instance.new("TextButton")
-        TabButton.Size = UDim2.new(0, 100, 0, 30)
-        TabButton.BackgroundColor3 = Colors.Secondary
-        TabButton.Text = tab.Title
-        TabButton.TextColor3 = Colors.Text
-        TabButton.TextSize = 14
-        TabButton.Font = Enum.Font.Gotham
-        TabButton.BorderSizePixel = 0
-        TabButton.Parent = TabContainer
-
-        local TabIndicator = Instance.new("Frame")
-        TabIndicator.Name = "TabIndicator"
-        TabIndicator.Size = UDim2.new(1, 0, 0, 3)
-        TabIndicator.Position = UDim2.new(0, 0, 1, -3)
-        TabIndicator.BackgroundColor3 = Colors.Accent
-        TabIndicator.BorderSizePixel = 0
-        TabIndicator.Visible = false
-        TabIndicator.Parent = TabButton
-
-        local TabContent = Instance.new("ScrollingFrame")
-        TabContent.Size = UDim2.new(1, 0, 1, 0)
-        TabContent.BackgroundTransparency = 1
-        TabContent.BorderSizePixel = 0
-        TabContent.ScrollBarThickness = 5
-        TabContent.ScrollBarImageColor3 = Colors.Accent
-        TabContent.Visible = false
-        TabContent.Parent = ContentContainer
-
-        local ContentListLayout = Instance.new("UIListLayout")
-        ContentListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        ContentListLayout.Padding = UDim.new(0, 10)
-        ContentListLayout.Parent = TabContent
-
-        local function UpdateCanvasSize()
-            TabContent.CanvasSize = UDim2.new(0, 0, 0, ContentListLayout.AbsoluteContentSize.Y + 20)
-        end
-        ContentListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateCanvasSize)
-
-        TabButton.MouseButton1Click:Connect(function()
-            if currentTab then
-                currentTab.Content.Visible = false
-                currentTab.Button.BackgroundColor3 = Colors.Secondary
-                currentTab.Button.TabIndicator.Visible = false
-            end
-            currentTab = tab
-            TabContent.Visible = true
-            TabButton.BackgroundColor3 = Colors.Accent
-            TabIndicator.Visible = true
-            UpdateCanvasSize()
-
-            -- Restaurar estados guardados
-            if TabStates[tab.Title] then
-                for element, state in pairs(TabStates[tab.Title]) do
-                    if element:IsA("TextButton") and state.Text then
-                        element.Text = state.Text
-                    elseif element:IsA("Frame") and state.Value then
-                        element.Size = UDim2.new(state.Value, 0, 1, 0)
-                    end
-                end
-            end
-        end)
-
-        tab.Button = TabButton
-        tab.Content = TabContent
-        table.insert(tabs, tab)
-
-        -- Botón
-        function tab:Button(options)
-            local ButtonFrame = Instance.new("TextButton")
-            ButtonFrame.Size = UDim2.new(1, 0, 0, 30)
-            ButtonFrame.BackgroundColor3 = Colors.Secondary
-            ButtonFrame.Text = options.Text or "Button"
-            ButtonFrame.TextColor3 = Colors.Text
-            ButtonFrame.TextSize = 14
-            ButtonFrame.Font = Enum.Font.Gotham
-            ButtonFrame.BorderSizePixel = 0
-            ButtonFrame.Parent = TabContent
-
-            ButtonFrame.MouseButton1Click:Connect(function()
-                options.Callback()
-            end)
-
-            -- Guardar estado
-            TabStates[tab.Title] = TabStates[tab.Title] or {}
-            TabStates[tab.Title][ButtonFrame] = {Text = ButtonFrame.Text}
-        end
-
-        -- Slider
-        function tab:Slider(options)
-            local SliderFrame = Instance.new("Frame")
-            SliderFrame.Size = UDim2.new(1, 0, 0, 50)
-            SliderFrame.BackgroundColor3 = Colors.Secondary
-            SliderFrame.BorderSizePixel = 0
-            SliderFrame.Parent = TabContent
-
-            local SliderLabel = Instance.new("TextLabel")
-            SliderLabel.Size = UDim2.new(1, -60, 0, 20)
-            SliderLabel.Position = UDim2.new(0, 10, 0, 5)
-            SliderLabel.BackgroundTransparency = 1
-            SliderLabel.Text = (options.Text or "Slider") .. ": " .. (options.Default or 50)
-            SliderLabel.TextColor3 = Colors.Text
-            SliderLabel.TextSize = 14
-            SliderLabel.Font = Enum.Font.Gotham
-            SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-            SliderLabel.Parent = SliderFrame
-
-            local SliderTrack = Instance.new("Frame")
-            SliderTrack.Size = UDim2.new(1, -20, 0, 5)
-            SliderTrack.Position = UDim2.new(0, 10, 1, -15)
-            SliderTrack.BackgroundColor3 = Colors.Background
-            SliderTrack.Parent = SliderFrame
-
-            local SliderFill = Instance.new("Frame")
-            SliderFill.Size = UDim2.new((options.Default or 50) / (options.Max or 100), 0, 1, 0)
-            SliderFill.BackgroundColor3 = Colors.Accent
-            SliderFill.Parent = SliderTrack
-
-            local SliderButton = Instance.new("TextButton")
-            SliderButton.Size = UDim2.new(1, 0, 1, 0)
-            SliderButton.BackgroundTransparency = 1
-            SliderButton.Text = ""
-            SliderButton.Parent = SliderTrack
-
-            local dragging = false
-            SliderButton.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = true
-                end
-            end)
-
-            SliderButton.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
                 end
             end)
+        end
+    end)
 
-            UserInputService.InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    local relativeX = math.clamp((input.Position.X - SliderTrack.AbsolutePosition.X) / SliderTrack.AbsoluteSize.X, 0, 1)
-                    local value = (options.Min or 0) + (relativeX * ((options.Max or 100) - (options.Min or 0)))
-                    =Instance.newStore("CreateCallback("Title = newButtons = {}
-.create("Button =Create("1State(tabButton = {}
- = {}
+    titleBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
 
-Button("Callback
-Button
-.end
- newInstance
-ParentMethod(options
-1end
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            updateInput(input)
+        end
+    end)
 
-0
-
-00.Child("Valor
-
-Parent = {}
-
-("Tween("TooltipValue("Tab.parent = {} create("Button =Instance.new("Tween =Instance("ToggleButton = {}
-Values
-.Color
-0
- (self
-0(tab("Default)
-Text = {}
-
-('Func("Tween(new void("Button =Attribute("Colors = {}
-
-Child("Button"
-("Valor(" end
- return
-0("Button = {}
-Button(".removeChild
- end
-Invoke("Button = {}
+    return contentFrame, mainFrame, screenGui
 end
- local function()
- = {}
-("Callback = {}
 
- ("Callback("SelectChild("Callback(function(options(options = {}
-newMouseButton("Agregar("["Child = {}
-Function("Button(options = {}
+-- Add a button with hover and click animations
+function XenoUILibrary.AddButton(contentFrame, text, callback)
+    local button = Instance.new("TextButton")
+    button.Text = text or "Button"
+    button.Size = UDim2.new(1, 0, 0, 50)
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextScaled = true
+    button.Font = Enum.Font.Gotham
+    button.Parent = contentFrame
 
-pre
-let("Add(tab("Crearroperties
- = {}
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = button
 
+    local shadow = Instance.new("ImageLabel")
+    shadow.Size = UDim2.new(1, 10, 1, 10)
+    shadow.Position = UDim2.new(0, -5, 0, -5)
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://1316045217"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.8
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+    shadow.Parent = button
+
+    -- Hover animation
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+            Size = UDim2.new(1, 2, 0, 52)
+        }):Play()
+    end)
+
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.2), {
+            BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+            Size = UDim2.new(1, 0, 0, 50)
+        }):Play()
+    end)
+
+    -- Click animation
+    button.MouseButton1Down:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.1), {
+            Size = UDim2.new(1, -2, 0, 48)
+        }):Play()
+    end)
+
+    button.MouseButton1Up:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.1), {
+            Size = UDim2.new(1, 0, 0, 50)
+        }):Play()
+        if callback then
+            callback()
+        end
+    end)
 end
-allCallback(Text =Callback("Title("0(function(options("Nuevo("Title("                
- = {}local "
- this0
-00 = {}
-Title = {}
-Text =("endforText =Options = ""Color = keys = {}
-Title = {}
 
-Title =Set("Tween("Shadow
- newItem("Button =({})
-Title("value("Title("End
-.add(connection = {}
-("Message(end-text.PerformLayout
-0encia("0能
-Title("ButtonText
-Menu("Union("PushButton(nil
- {}
+-- Add a toggle with smooth slide animation
+function XenoUILibrary.AddToggle(contentFrame, text, default, callback)
+    local toggleFrame = Instance.new("Frame")
+    toggleFrame.Size = UDim2.new(1, 0, 0, 50)
+    toggleFrame.BackgroundTransparency = 1
+    toggleFrame.Parent = contentFrame
 
-End
+    local label = Instance.new("TextLabel")
+    label.Text = text or "Toggle"
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextScaled = true
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.Gotham
+    label.Parent = toggleFrame
 
-0
+    local toggleButton = Instance.new("Frame")
+    toggleButton.Size = UDim2.new(0, 60, 0, 30)
+    toggleButton.Position = UDim2.new(1, -60, 0.5, -15)
+    toggleButton.BackgroundColor3 = default and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
+    toggleButton.Parent = toggleFrame
 
-0 {}
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 15)
+    corner.Parent = toggleButton
 
+    local circle = Instance.new("Frame")
+    circle.Size = UDim2.new(0, 24, 0, 24)
+    circle.Position = default and UDim2.new(1, -30, 0.5, -12) or UDim2.new(0, 6, 0.5, -12)
+    circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    circle.Parent = toggleButton
 
- = {}
+    local circleCorner = Instance.new("UICorner")
+    circleCorner.CornerRadius = UDim.new(0, 12)
+    circleCorner.Parent = circle
 
-endors =5 = {}
-0
-("Tween("Button
-0
-Keys default("Title = {}new("Title =Tab("")
-new("Button("end
-local
-()
- = {}
-("S
-.New("ValueTitle = {}
-("Default = {}
-Title = {}
-("N = {}
+    local isOn = default or false
 
-("Title = {}
-end =Texto("Button("CreateButton("Button = {}
-
-end("0 =("1("01("1
-("Switch("Value("Message = {}
-
- = boolean("Button("Value =Value("Local = function("Message = {}
-("áson_tab
-Label("0
-55Title = "Value = {}
-("Value = {}
+    toggleButton.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            isOn = not isOn
+            local targetPos = isOn and UDim2.new(1, -30, 0.5, -12) or UDim2.new(0, 6, 0.5, -12)
+            local targetColor = isOn and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(80, 80, 80)
+            TweenService:Create(circle, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {Position = targetPos}):Play()
+            TweenService:Create(toggleButton, TweenInfo.new(0.3), {BackgroundColor3 = targetColor}):Play()
+            if callback then
+                callback(isOn)
+            end
+        end
+    end)
 end
-Value("10("Tab1 =ilter("1 = {}Color("end
-uloadd("Value = {}
 
-end("Selectorparent = {}
+-- Create a notification with slide and fade effects
+function XenoUILibrary.Notify(title, content, duration)
+    local notificationGui = Instance.new("ScreenGui")
+    notificationGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    notificationGui.ResetOnSpawn = false
 
-51Value = {}
+    local notifyFrame = Instance.new("Frame")
+    notifyFrame.Size = UDim2.new(0, 300, 0, 100)
+    notifyFrame.Position = UDim2.new(1, 310, 1, -110)
+    notifyFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    notifyFrame.Parent = notificationGui
 
-ValueAccessor "end(server = {}
-:RegisterPropertyValue("Value =connect("1 =Effect("Show(d(MouseValue(newValue("end =0("endf0
-01Child =0
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = notifyFrame
 
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Text = title or "Notification"
+    titleLabel.Size = UDim2.new(1, -20, 0, 30)
+    titleLabel.Position = UDim2.new(0, 10, 0, 10)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+    titleLabel.TextScaled = true
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.Parent = notifyFrame
 
-Bind("ae(function("Value =Value("Valor =ader("Value = {}
-end("Mostrar("0(function("ValueTitleLabel = {}
-Text = {}
+    local contentLabel = Instance.new("TextLabel")
+    contentLabel.Text = content or "This is a notification!"
+    contentLabel.Size = UDim2.new(1, -20, 0, 50)
+    contentLabel.Position = UDim2.new(0, 10, 0, 40)
+    contentLabel.BackgroundTransparency = 1
+    contentLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    contentLabel.TextScaled = true
+    contentLabel.TextWrapped = true
+    contentLabel.Font = Enum.Font.Gotham
+    contentLabel.Parent = notifyFrame
 
+    -- Slide-in animation
+    TweenService:Create(notifyFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = UDim2.new(1, -310, 1, -110)
+    }):Play()
 
-
- = {}
-
-Value = {}
-("0("0,10("0(function("ButtonConnectionLabel =("Value = {}
-Value = function()Value = {}
-end("Valor =Visibility = {}
-ValueValue = function("Show
-values(" end:ConnectChild =Callback("Border =0Value =5Value = {}
-
-end("Button("0("Value = function("Value = {}
-
-("0("Value = {}
---Connect(" =Connect("Tween("Show",
-   ConnectChild("Value = {}
-Text =Endpoint("Show(function(text = {}
-Drag("Value =Override("Tween("Create("UseButton
-0.nextDouble = {}
-"Value("Toggle "endIndexVisual = {}
- =][".Value("Background("3 = {}
-Text = {}
-Title = function("Button = "0Children("Show("Value("0("Show("Show(local textLabel = {}
-
-
-end =0
-
-Value("Tab =Widget = {}
-
+    -- Fade out after duration
+    spawn(function()
+        wait(duration or 5)
+        TweenService:Create(notifyFrame, TweenInfo.new(0.5), {Position = UDim2.new(1, 310, 1, -110)}):Play()
+        TweenService:Create(notifyFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+        TweenService:Create(titleLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+        TweenService:Create(contentLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+        wait(0.5)
+        notificationGui:Destroy()
+    end)
 end
-terValue0
 
-
-end("ShowConnection = {}
-Show = {}
-Show(Color = {}
-end("Value("Show("0
-.Value("Valor = {}
-Text =Callback("Show
-Value = {}
-end;Title = {}
-("Value = {}
-return
-0
-
-.Connect = {}
-ize =Value = {}
-("Show =Connect("0
-Welcome
-Value = {}
-
-Value("Show =Handler...
-
-Value = {}
-...
-Value("Create = {}
-
-
- = function("Re
-0 =0Value = {}
-:"End(object = function("ButtonText =Connect("Show()
- = {}
-("0Function("ShowConnection = {}
-
- end
-
-Message = {}
- =Target("CreateUDimension = function("Show()
-Title("Create = function("Value = {}
-Title = function("Show = end("Value = function("Save("Round3Value("1 = {}
-("Title = function("Show({}
- =Property("Button("end = callback = functionLabel("Show("Perfect("Titulo = function("Title = {}
-
-Value0.function = function = function("ShowConnection = new("ShowValue
-0{}
- = = {
-Title("Create("Show("0("Valor = function("Value =Connect("ShowLabel = function("Value("Show".Value("0
- function("Value = {}
-end["Show()
- = function = function("Show()
-Title = function("Round("2 = function("Show = loop(trueText = function("Show("Value = function("Show = function("Show("Value = function("Show = function("Create" = {:?}",Title = {}
- = function("ShowValue = {}
-("Show("Show("Value = {}
-
-Show("Value = function("Show")
- = function("Show("Value = {}"ShowAll(function("Text5 = function("Show("ShowChild = function("0 = function("CreateContainer = function("ShowNotification =Callback("ShowValue = function("ShowValue("Callbacks("Show("Title = function("Show("Value("ShowTitle("Show.val("Button = function("0.find = function("Show("TopLevel01} =Callback("ShowConnection =Value("Show("ShowTitle =ValueLabel("Show = function("Show"Value("Show("Show("Value = function("ShowChild = function("Show = {}
-
-text =Value("Show = function()">3 = function("Show = function("Show = newVal =4("Show = function =Property = function("Show = function("ShowLabel("Show = {}
-
-endFadeable("Show = function("Show("Show = "Value =Callback("Show"endolder0.Child = function("Show = function("Show("Show("Show = function("ShowTabLabelColor4 = function(options("Show("Show"Show"title = function("Show =1end("Show
-
-("Show = "LongButton = function("Show["Value = {}
-
-ShowCharacters: function("Show = {}
-
-print =2 = Callback("endPreload("Show("ShowAsync("Show", = function("Show();Show("Show = function("Show = {}
-
-("SoundContainer("Show("Frame = function("Show("Show()
-
-("Show = {}
-
-end
-0"ShowConnection: function("Show
-
-0bject("Show = function("Show")
-
-end("Show =Function("Show = {}
-
-end("Show = function("Show = {}
-
-
-Show"Value = {}
-
-end("Show
-
-name = {}
-
-end("Show("Show = {}
-
-Value = function("Show()
-="Show("Table end
-
-...
-
-end="V =Property("GetState = {}
-
-table("ShowConnection"Value0model("Show("Valor("Show()
-"Show = function("Show"Show = function("Show = {}
-title = {Value"valueShow = function("Show = function("Show = function("Show = function("ShowValue = {...endAnimation("Show = function("Show =0 if Child0Child = function("Show = {}
-
-endClass("Show =RawValue = function("ChildProperty = function("Show("ShowAll("Show("MainFrame["Show = function
- function("ShowConnection("Show(gameShow = function("Show = function("Show =Property =Value("end = {}
-
- ="Show = function("Show("ShowConnection = {}
-
-Visible = function("Show"Show = function("Show"Value = {}
-
-Show = function("Show = function("Show =Text = function("Show("Show = function("Show =Handle("Show = function("Show("Show = new("Show = function("Show = function("Show("Show = {}
-
-("ShowValue = 
-
-Show("Show = function("Show = function("ShowValue("Show = function("Show = function("Show = {}
-
-.WriteLine("Show = nil =Value = {}
-
-end("000("Show =Callback("Show("Show = function("Show =Function("Show("Show = function("Show = function("Show = function("Show = {}
-("Show = function("ShowValue = {}
-("Show = {} = function("Show = function("Show =0
-
- Show("Show()
-
-("Show =Title("Show = {}
-
-Text =Instance("Show =Container = {}
-
-.show = function("Show = function("Show = function("Show = function("Show = function("Show = {}
-
-Show =Object("Show = function("Show("Show = function("Show = function("ShowType("Show = function("Show = function("Show =Properties.Togglefunction("Show = function("ShowValue "Show = function("Show = function("ShowValue: function("Show = function("Show = function("Show = function("Show = function("Show()
-
-Show("Show = function("ShowValue10if newValue0 ""
-
-
-Show = function("Show = function("ShowCurrentValueend
-
-Show =If "ClValue("ShowValue("Show = function("ShowText("Show = function("Show =004("ShowValue("Show = function("Show
-
-ShowShow("Show = function("Show = {}
-
-
- = function("ShowTable("Show = function("Show("Show("ShowDialogendCallback("ShowConnection("Show = function("Show("ShowButton = function("Show(to
-
-("Show("Value = function("Show = function("ShowValue = function("Show = function("Show = function("Show()
-
-"Show = function("Show("Show = function("Show = function("ShowValue("Return false = function("Show =050.show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show(function("Value = function("Show = function("Show = function("Show
-Value("Show = {}
-("Show("Show = function("Show = function("Show = function("ShowValue{Value("Show = function("Show = function("Show0("Show(function("Show("    
- = function("Show = function("Show("ShowAll("Show = function("Show("Show = function("Show = function("Show = {}
-
-("Show = function("Show
-
-Scale("Show = function("Show =Handle("Show = function("Show = function("Show = function("Show = function("Show = function("ShowTitle = function("ShowValue("Show = function("Show()
-("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("ShowError = function("Show = function("Show = function("Show =0Value("Show = function("Show("Show = function("Show("Value = function("Show = function("Show = function("Show = function("Show("Show = function("ShowValue("Show = function("Show = function("Show("ShowValue("ShowFirst("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show =
-Show = function("Show("Show = function("Show = function("Show = nil
-Show"Show = function("Show = function("Show
-
- nil.ShowerShow = function("Show = function("Show = function("Show,00Show = function("Show = function("Show = "Show = function("ShowValue = {}
-
-Show.VISIBLE("Show = function("Show
-0 function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("ShowValue("Show = function("Show = function("Show("ShowfulText = function("Show = function("ShowValue = function("Show = function("Show = function("Show = {"Show =50FShow =("Show = function("ShowValue = function("ShowAll = function("Show =("Show = function("Show =Title("ShowValue = function("ShowValue("ShowAll("ShowConnection = function("ShowMaster = function("Show =function("Show = function("Show = function("Show = function("Show = function("Show ={"ShowValue("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show"Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show(D = function("Show = function("Show = function("Show = function("Show =0.getShow("Show = function("Show = function("Show = function("Show("Show = function("Show = false.Value("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show(function("Show = function("Show = function("Button = function("Show(falseif "Show = = function("Show = function("Show = function("Show("Showall = function("Show =10Label35Show("Show = function("Show("ShowValue("ShowCollection("Show = function("ShowValue("Show = function("Show(function("Show = function("Show("ShowConnection = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show.all.instance = function("Show = function("Show("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show(function("Show = function("Show =("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show("Show()
-Show("Show("Show("Show("Show = function("Show("Show = function("Show =function("Show = function("Show = function("Show("Show(Connection("Show = function("Show = function("Show = function("Show("Show = function("Show("Show("Show = function("Show("Show = function("Show("Show("Show("Show("Show()
-Show("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show = function("ShowValue("Show = function("Show = function("Show: function("Showalue local("Show =("Show("Show =("Show = function("Show("Show("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show"Show = function("Show = function("Show = function("Show["Show = function("Show = function("ShowValue = function("Show = function("Show = function("Show = function("Show = function("Show = function("Showw = function("Show = function("Show("Show = function("Show = function("Show = function("Show(table("Show = function("Show(options"Show = function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show = function("ShowValue("Show = function("ShowAll("Show = function("Show = function("Show = function("Show = function("Show.mouse("Show = function("Show()
-
-
-0("Show = function("Show("Show =("Show = function("Show = function("ShowChildIndex"Show = function("Show("Show(tab("Show = function("Show =0Value0roperty.Set("Show =function("Show = function("Show = function("Show = function("Show = function("ShowValue: function("Show
- = function("Show = function("Show = function("Show = function("Show =function("Show = function("Show =0 = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show(function("Show = function("Show{
-ScShow = function("Show=function("Show = function("Show = function("Show = function("Show = function("Show = function("Show, function("Show = function("Show = function("Show = function("ShowValue"Show
-0Function("Show = function("Show.Value("Show = function("Show = function("Show = function("Show = function("Destroy("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show: function("Show("Show = = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show = function("ShowValue("Show("Show = function("Show = function("Show = function("Show =if function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("ShowValue("Show()
-Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show =Options("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show =0 = function("Show = function("Show = function("Show = function("ShowHide = function("Show = function("Show = function("Show = function("Show("Show =("Show = function("Show = function("Show("Show = function("Show = function("Show =string("Show("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show =Options("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show =function("Show = function("Show = function("Show = function("Show = function("ShowValue = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show
- = function("Show = function("ShowValueValue = function("Show("Show = function("Show = function("Show":"Show = function("Show("Show = function("Show = function("ShowLabel = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show") = function("Show(function("Show = function("Show": function("Show = function("Show = function("Show = function("Show = function("Show =Show(function("Show = function("Show = function("ShowChildrend = function("Show = function("Show"( = function("Show = function("Show = {"Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show: function("Show = function("Show = function("Show = function("Show = function("Show": function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("ShowLoreMethod = function("Show()
-Value("Show = function("Show = function("Show = function("Show = function("Show = function("Show: function("Show = function("Show = function("Show = function("Show: function("Show: function("Show: function("Show = function("Show = function("Show = function("Show = function("Show = function("Show"Show = function("Show = function("Show: function("Show = function("Show: {
-
-("Show: function("Show = function("Show: function("Show = function("Show("NewText: function()
-Show: function("Show = function("Show = function("Show("Show: function("Show = function("Show: function("Show = function("Show: function("Show = function("Show = function("Show: function("Show = function("Show: function("Show: function("Show = function("Show = function("Show: function("Show = function("Show = function("Show: function("Show: function("Show = function("Show: function("Show: function("Show: function("Show: function("Show
- function("Show = function("Show: function("Show: function("Show(function("Show: function("Show: function("Show = function("Show = function("Show = function("Show: function("Show = function("Show: function("Show = function("Show = function("Show = function("Show = function("Show: function("Show = function("Show("Show: function("Show = function("Show: function("Show = function("Show = function("Show = function("Show: function("Show = function("Show: function("Show: function("Show: function("Show()
- = function("Show: function("Show: function("Show = function("Show = function("Show =function("Show = function("Show = function("Show()
-
- = function("Show: function("Show: function("Show("Show = function("Show = function("Show: function("Show = function("Show = function("Show = function("ShowAll("ShowValue = function("Show
-
-Show("Show: function("Show"use = function("Show = function("Show =Value = function("Show = function("Show = function("Show("Show: function("Show = function("Show"ShowValue("Show = function("Show("ShowChild("Show: function("ShowChild("Show = function("Show: function("Show = function("Show: function("Show: function("Show()
-Show("Show("Show: function("Show: function("Show" = function("Show = function("Show: function("Show = function("Show: function("Show = function("Show = function("Show: function("Show: function("Show = function("Show = function("Show: function("Show = function("Show: function("Show = function("Show = function("Show = function("Show()
-    function("Show: function("Show: function("Show = function("Show: function("Show: function("Show: function("Show = function("Show: function("Show: function("Show: function("Show = function("Show = function("Show("Show: function("Show = function("ShowAll = function("Show: function("Show = function("Show: function("Show")Of("Show: function("Show = function("Show = {}
-
-text = function("Show = function("Show: function("Show = function("Show = function("Show = function("Show = function("Show: function("Show()
-
-Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Show = function("Doble = function("Show: function("Show, function("Show: function("Show = function("Show = function
+-- Example usage
+local contentFrame = XenoUILibrary.CreateWindow("Xeno UI - Demo")
+XenoUILibrary.AddButton(contentFrame, "Show Notification", function()
+    XenoUILibrary.Notify("Success!", "You clicked the button!", 3)
+end)
+XenoUILibrary.AddToggle(contentFrame, "Toggle Effect", false, function(value)
+    XenoUILibrary.Notify("Toggle", value and "Effect Enabled" or "Effect Disabled", 3)
+end)
+
+return XenoUILibrary
