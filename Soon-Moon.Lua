@@ -6,10 +6,6 @@ Library.Sliders = {}
 Library.Dropdowns = {}
 Library.Notifications = {}
 
--- Services
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-
 -- Colors and Configuration
 local Colors = {
     Background = Color3.fromRGB(20, 20, 20),
@@ -26,25 +22,22 @@ local Colors = {
     NotificationBorder = Color3.fromRGB(60, 60, 255)
 }
 
--- Icon Types
+-- Icon Configuration
 local rblx = "rbxassetid://"
 local IconTypes = {
-    Info = "ℹ️",
-    Warning = "⚠️",
-    Error = "❌",
-    Success = "✅",
+    Info = rblx .. "6023426923",
+    Warning = rblx .. "6023426926",
+    Error = rblx .. "6023426915",
+    Success = rblx .. "6023426928",
     Notify = rblx .. "6023426923",
-    SuccessL = rblx .. "6023426926", -- Corrected ID assuming typo
+    ["Success L"] = rblx .. "6023426926",
     Human = rblx .. "6022668945",
     Block = rblx .. "6023565892",
     Document = rblx .. "6022668888"
 }
 
--- Animation Helper
-local function createTween(instance, properties, duration, easingStyle, easingDirection)
-    local tweenInfo = TweenInfo.new(duration, easingStyle or Enum.EasingStyle.Quad, easingDirection or Enum.EasingDirection.Out)
-    return TweenService:Create(instance, tweenInfo, properties)
-end
+-- Tween Service for Animations
+local TweenService = game:GetService("UserInputService")
 
 -- Main GUI creation
 function Library:CreateWindow(title)
@@ -61,13 +54,17 @@ function Library:CreateWindow(title)
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = ScreenGui
+
+    -- Animation: Fade in
     MainFrame.BackgroundTransparency = 1
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = Tween Facets:Create(tweenInfo, {Transparency = 0})
+    tween:Play()
 
-    -- Fade-in animation
-    createTween(MainFrame, {BackgroundTransparency = 0}, 0.5):Play()
-
-    -- Draggable
+    -- Make draggable
+    local UserInputService = game:GetService("UserInputService")
     local dragging, dragInput, dragStart, startPos
+
     local function updateDrag(input)
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
@@ -78,6 +75,7 @@ function Library:CreateWindow(title)
             dragging = true
             dragStart = input.Position
             startPos = MainFrame.Position
+
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -131,9 +129,11 @@ function Library:CreateWindow(title)
     CloseButton.Parent = TitleBar
 
     CloseButton.MouseButton1Click:Connect(function()
-        createTween(MainFrame, {BackgroundTransparency = 1}, 0.5):Play()
-        task.wait(0.5)
-        ScreenGui:Destroy()
+        local tweenOut = TweenService:Create(MainFrame, tweenInfo, {Transparency = 1})
+        tweenOut:Play()
+        tweenOut.Completed:Connect(function()
+            ScreenGui:Destroy()
+        end)
     end)
 
     -- Tab container
@@ -160,12 +160,11 @@ function Library:CreateWindow(title)
     ContentFrame.BorderSizePixel = 0
     ContentFrame.Parent = MainFrame
 
-    local window = {
-        ContentFrame = ContentFrame,
-        TabContainer = TabContainer,
-        MainFrame = MainFrame,
-        ScreenGui = ScreenGui
-    }
+    local window = {}
+    window.ContentFrame = ContentFrame
+    window.TabContainer = TabContainer
+    window.MainFrame = MainFrame
+    window.ScreenGui = ScreenGui
 
     return window
 end
@@ -179,17 +178,6 @@ function Library:AddTab(window, tabName, icon)
     TabButton.BorderSizePixel = 0
     TabButton.Text = ""
     TabButton.Parent = window.TabContainer
-    TabButton.BackgroundTransparency = 0.5
-
-    -- Scale animation on hover
-    TabButton.MouseEnter:Connect(function()
-        createTween(TabButton, {BackgroundTransparency = 0, Size = UDim2.new(1, 0, 0, 42)}, 0.2):Play()
-    end)
-    TabButton.MouseLeave:Connect(function()
-        if TabButton.BackgroundColor3 ~= Colors.Selected then
-            createTween(TabButton, {BackgroundTransparency = 0.5, Size = UDim2.new(1, 0, 0, 40)}, 0.2):Play()
-        end
-    end)
 
     local TabLabel = Instance.new("TextLabel")
     TabLabel.Name = "Label"
@@ -203,7 +191,7 @@ function Library:AddTab(window, tabName, icon)
     TabLabel.TextXAlignment = Enum.TextXAlignment.Left
     TabLabel.Parent = TabButton
 
-    -- Icon support
+    -- Icon if provided
     if icon and IconTypes[icon] then
         local IconImage = Instance.new("ImageLabel")
         IconImage.Name = "Icon"
@@ -241,33 +229,35 @@ function Library:AddTab(window, tabName, icon)
         Page = ContentPage
     })
 
+    -- Animation for tab selection
+    local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
     TabButton.MouseButton1Click:Connect(function()
         for _, tab in pairs(self.Tabs) do
-            tab.Button.BackgroundColor3 = Colors.TabBackground
-            tab.Button.BackgroundTransparency = 0.5
+            local tween = TweenService:Create(tab.Button, tweenInfo, {BackgroundColor3 = Colors.TabBackground})
+            tween:Play()
             tab.Page.Visible = false
-            createTween(tab.Page, {CanvasPosition = Vector2.new(0, 0)}, 0.3):Play()
         end
-        TabButton.BackgroundColor3 = Colors.Selected
-        TabButton.BackgroundTransparency = 0
+
+        local tween = TweenService:Create(TabButton, tweenInfo, {BackgroundColor3 = Colors.Selected})
+        tween:Play()
         ContentPage.Visible = true
-        createTween(ContentPage, {CanvasPosition = Vector2.new(0, 0)}, 0.3):Play()
     end)
 
     if #self.Tabs == 1 then
         TabButton.BackgroundColor3 = Colors.Selected
-        TabButton.BackgroundTransparency = 0
         ContentPage.Visible = true
     end
 
-    local tab = {Page = ContentPage}
+    local tab = {}
+    tab.Page = ContentPage
+
     return tab
 end
 
 -- Add label function
 function Library:AddLabel(tab, text, icon)
     local LabelContainer = Instance.new("Frame")
-    LabelContainer.Name = text .. "Label"
+    LabelContainer.Name = "LabelContainer"
     LabelContainer.Size = UDim2.new(1, 0, 0, 30)
     LabelContainer.BackgroundTransparency = 1
     LabelContainer.Parent = tab.Page
@@ -284,7 +274,7 @@ function Library:AddLabel(tab, text, icon)
     LabelText.TextXAlignment = Enum.TextXAlignment.Left
     LabelText.Parent = LabelContainer
 
-    -- Icon support
+    -- Icon if provided
     if icon and IconTypes[icon] then
         local IconImage = Instance.new("ImageLabel")
         IconImage.Name = "Icon"
@@ -295,9 +285,11 @@ function Library:AddLabel(tab, text, icon)
         IconImage.Parent = LabelContainer
     end
 
-    -- Fade-in animation
-    LabelText.TextTransparency = 1
-    createTween(LabelText, {TextTransparency = 0}, 0.5):Play()
+    -- Animation: Slide in
+    LabelContainer.Position = UDim2.new(-1, 0, 0, 0)
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(LabelContainer, tweenInfo, {Position = UDim2.new(0, 0, 0, 0)})
+    tween:Play()
 
     return LabelContainer
 end
@@ -349,6 +341,12 @@ function Library:AddToggle(tab, name, default, callback)
     UICorner2.CornerRadius = UDim.new(1, 0)
     UICorner2.Parent = ToggleCircle
 
+    local Toggle = {}
+    Toggle.Value = default
+    Toggle.Container = ToggleContainer
+    Toggle.Button = ToggleButton
+    Toggle.Circle = ToggleCircle
+
     local ToggleClickArea = Instance.new("TextButton")
     ToggleClickArea.Name = "ClickArea"
     ToggleClickArea.Size = UDim2.new(1, 0, 1, 0)
@@ -356,31 +354,29 @@ function Library:AddToggle(tab, name, default, callback)
     ToggleClickArea.Text = ""
     ToggleClickArea.Parent = ToggleContainer
 
-    local Toggle = {
-        Value = default,
-        Container = ToggleContainer,
-        Button = ToggleButton,
-        Circle = ToggleCircle
-    }
-
     local function updateToggle()
         Toggle.Value = not Toggle.Value
+
+        local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         if Toggle.Value then
-            createTween(ToggleButton, {BackgroundColor3 = Colors.ToggleOn}, 0.2):Play()
-            createTween(ToggleCircle, {Position = UDim2.new(1, -18, 0.5, -8)}, 0.2):Play()
+            TweenService:Create(ToggleButton, tweenInfo, {BackgroundColor3 = Colors.ToggleOn}):Play()
+            TweenService:Create(ToggleCircle, tweenInfo, {Position = UDim2.new(1, -18, 0.5, -8)}):Play()
         else
-            createTween(ToggleButton, {BackgroundColor3 = Colors.ToggleOff}, 0.2):Play()
-            createTween(ToggleCircle, {Position = UDim2.new(0, 2, 0.5, -8)}, 0.2):Play()
+            TweenService:Create(ToggleButton, tweenInfo, {BackgroundColor3 = Colors.ToggleOff}):Play()
+            TweenService:Create(ToggleCircle, tweenInfo, {Position = UDim2.new(0, 2, 0.5, -8)}):Play()
         end
+
         callback(Toggle.Value)
     end
 
     ToggleClickArea.MouseButton1Click:Connect(updateToggle)
     table.insert(self.Toggles, Toggle)
 
-    -- Fade-in animation
-    ToggleContainer.BackgroundTransparency = 1
-    createTween(ToggleContainer, {BackgroundTransparency = 0}, 0.5):Play()
+    -- Animation: Slide in
+    ToggleContainer.Position = UDim2.new(-1, 0, 0, 0)
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(ToggleContainer, tweenInfo, {Position = UDim2.new(0, 0, 0, 0)})
+    tween:Play()
 
     return Toggle
 end
@@ -436,6 +432,7 @@ function Library:AddSlider(tab, name, options, callback)
     UICorner2.Parent = SliderFill
 
     local SliderValue = Instance.new("TextLabel")
+    SliderValue.NameThermostat = game:GetService("TextLabel")
     SliderValue.Name = "Value"
     SliderValue.Size = UDim2.new(0, 50, 0, 20)
     SliderValue.Position = UDim2.new(1, -60, 0, 0)
@@ -467,12 +464,11 @@ function Library:AddSlider(tab, name, options, callback)
     SliderClickArea.Text = ""
     SliderClickArea.Parent = SliderBackground
 
-    local Slider = {
-        Value = default,
-        Container = SliderContainer,
-        Background = SliderBackground,
-        Fill = SliderFill
-    }
+    local Slider = {}
+    Slider.Value = default
+    Slider.Container = SliderContainer
+    Slider.Background = SliderBackground
+    Slider.Fill = SliderFill
 
     local function updateSlider(input)
         local posX = input.Position.X
@@ -494,8 +490,9 @@ function Library:AddSlider(tab, name, options, callback)
         SliderValue.Text = displayValue .. suffix
 
         local fillWidth = relPos * SliderBackground.AbsoluteSize.X
-        createTween(SliderFill, {Size = UDim2.new(0, fillWidth, 1, 0)}, 0.1):Play()
-        createTween(SliderThumb, {Position = UDim2.new(0, fillWidth - 6, 0.5, -6)}, 0.1):Play()
+        local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Linear)
+        TweenService:Create(SliderFill, tweenInfo, {Size = UDim2.new(0, fillWidth, 1, 0)}):Play()
+        TweenService:Create(SliderThumb, tweenInfo, {Position = UDim2.new(0, fillWidth - 6, 0.5, -6)}):Play()
 
         callback(value)
     end
@@ -514,13 +511,13 @@ function Library:AddSlider(tab, name, options, callback)
         updateSlider({Position = input})
     end)
 
-    UserInputService.InputEnded:Connect(function(input)
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
 
-    UserInputService.InputChanged:Connect(function(input)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             updateSlider(input)
         end
@@ -528,9 +525,11 @@ function Library:AddSlider(tab, name, options, callback)
 
     table.insert(self.Sliders, Slider)
 
-    -- Fade-in animation
-    SliderContainer.BackgroundTransparency = 1
-    createTween(SliderContainer, {BackgroundTransparency = 0}, 0.5):Play()
+    -- Animation: Slide in
+    SliderContainer.Position = UDim2.new(-1, 0, 0, 0)
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(SliderContainer, tweenInfo, {Position = UDim2.new(0, 0, 0, 0)})
+    tween:Play()
 
     return Slider
 end
@@ -570,7 +569,7 @@ function Library:AddDropdown(tab, name, options, callback)
     DropdownButton.Font = Enum.Font.SourceSans
     DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
     DropdownButton.TextTruncate = Enum.TextTruncate.AtEnd
-    DropdownButton.ZIndex = 10
+    DropdownButton.ClipsDescendants = true
     DropdownButton.Parent = DropdownContainer
 
     local DropdownPadding = Instance.new("UIPadding")
@@ -590,7 +589,6 @@ function Library:AddDropdown(tab, name, options, callback)
     DropdownArrow.TextColor3 = Colors.Text
     DropdownArrow.TextSize = 12
     DropdownArrow.Font = Enum.Font.SourceSans
-    DropdownArrow.ZIndex = 11
     DropdownArrow.Parent = DropdownButton
 
     local DropdownMenu = Instance.new("Frame")
@@ -600,7 +598,7 @@ function Library:AddDropdown(tab, name, options, callback)
     DropdownMenu.BackgroundColor3 = Colors.TabBackground
     DropdownMenu.BorderSizePixel = 0
     DropdownMenu.Visible = false
-    DropdownMenu.ZIndex = 15
+    DropdownMenu.ZIndex = 10 -- Increased ZIndex for visibility
     DropdownMenu.Parent = DropdownButton
 
     local UICorner2 = Instance.new("UICorner")
@@ -613,13 +611,12 @@ function Library:AddDropdown(tab, name, options, callback)
     OptionLayout.Padding = UDim.new(0, 0)
     OptionLayout.Parent = DropdownMenu
 
-    local Dropdown = {
-        Container = DropdownContainer,
-        Button = DropdownButton,
-        Menu = DropdownMenu,
-        Value = options[1] or "",
-        Options = options
-    }
+    local Dropdown = {}
+    Dropdown.Container = DropdownContainer
+    Dropdown.Button = DropdownButton
+    Dropdown.Menu = DropdownMenu
+    Dropdown.Value = options[1] or ""
+    Dropdown.Options = options
 
     for i, option in ipairs(options) do
         local OptionButton = Instance.new("TextButton")
@@ -631,7 +628,7 @@ function Library:AddDropdown(tab, name, options, callback)
         OptionButton.TextSize = 14
         OptionButton.Font = Enum.Font.SourceSans
         OptionButton.TextXAlignment = Enum.TextXAlignment.Left
-        OptionButton.ZIndex = 16
+        OptionButton.ZIndex = 11
         OptionButton.Parent = DropdownMenu
 
         local OptionPadding = Instance.new("UIPadding")
@@ -647,23 +644,24 @@ function Library:AddDropdown(tab, name, options, callback)
         end)
 
         OptionButton.MouseEnter:Connect(function()
-            createTween(OptionButton, {BackgroundTransparency = 0.9}, 0.2):Play()
+            local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Sine)
+            TweenService:Create(OptionButton, tweenInfo, {BackgroundTransparency = 0.9, BackgroundColor3 = Colors.Selected}):Play()
         end)
 
         OptionButton.MouseLeave:Connect(function()
-            createTween(OptionButton, {BackgroundTransparency = 1}, 0.2):Play()
+            local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Sine)
+            TweenService:Create(OptionButton, tweenInfo, {BackgroundTransparency = 1}):Play()
         end)
     end
 
     DropdownButton.MouseButton1Click:Connect(function()
         DropdownMenu.Visible = not DropdownMenu.Visible
         DropdownArrow.Text = DropdownMenu.Visible and "▲" or "▼"
-        createTween(DropdownMenu, {Size = DropdownMenu.Visible and UDim2.new(1, 0, 0, #options * 25) or UDim2.new(1, 0, 0, 0)}, 0.3):Play()
     end)
 
-    UserInputService.InputBegan:Connect(function(input)
+    game:GetService("UserInputService").InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local mousePos = UserInputService:GetMouseLocation()
+            local mousePos = game:GetService("UserInputService"):GetMouseLocation()
             local buttonPos = DropdownButton.AbsolutePosition
             local buttonSize = DropdownButton.AbsoluteSize
 
@@ -671,16 +669,17 @@ function Library:AddDropdown(tab, name, options, callback)
                mousePos.Y < buttonPos.Y or mousePos.Y > buttonPos.Y + buttonSize.Y + DropdownMenu.AbsoluteSize.Y then
                 DropdownMenu.Visible = false
                 DropdownArrow.Text = "▼"
-                createTween(DropdownMenu, {Size = UDim2.new(1, 0, 0, 0)}, 0.3):Play()
             end
         end
     end)
 
     table.insert(self.Dropdowns, Dropdown)
 
-    -- Fade-in animation
-    DropdownContainer.BackgroundTransparency = 1
-    createTween(DropdownContainer, {BackgroundTransparency = 0}, 0.5):Play()
+    -- Animation: Slide in
+    DropdownContainer.Position = UDim2.new(-1, 0, 0, 0)
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(DropdownContainer, tweenInfo, {Position = UDim2.new(0, 0, 0, 0)})
+    tween:Play()
 
     return Dropdown
 end
@@ -698,21 +697,13 @@ function Library:Notify(title, text, duration, notificationType)
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Name = "NotificationFrame"
     NotificationFrame.Size = UDim2.new(0, 280, 0, 80)
-    NotificationFrame.Position = UDim2.new(1, 20, 0.7, -40) -- Adjusted lower
+    -- Position adjusted to stack notifications
+    local offset = #self.Notifications * 90
+    NotificationFrame.Position = UDim2.new(1, 20, 0.6, -40 + offset)
     NotificationFrame.BackgroundColor3 = Colors.NotificationBackground
     NotificationFrame.BorderColor3 = Colors.NotificationBorder
     NotificationFrame.BorderSizePixel = 1
-    NotificationFrame.BackgroundTransparency = 1
     NotificationFrame.Parent = NotificationGui
-
-    -- Stack notifications
-    local offsetY = 0
-    for _, notif in ipairs(self.Notifications) do
-        if notif.Frame.Parent then
-            offsetY = offsetY + notif.Frame.Size.Y.Offset + 10
-        end
-    end
-    NotificationFrame.Position = UDim2.new(1, 20, 0.7, -40 + offsetY)
 
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(0, 6)
@@ -724,11 +715,10 @@ function Library:Notify(title, text, duration, notificationType)
     TitleLabel.Position = UDim2.new(0, 10, 0, 5)
     TitleLabel.BackgroundTransparency = 1
     TitleLabel.Text = title
-    TitleLabel.TextColor3 = Colors.Text
+    TitleLabel.TextColor把自己 = Colors.Text
     TitleLabel.TextSize = 16
     TitleLabel.Font = Enum.Font.SourceSansBold
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLabel.TextTransparency = 1
     TitleLabel.Parent = NotificationFrame
 
     local MessageLabel = Instance.new("TextLabel")
@@ -743,7 +733,6 @@ function Library:Notify(title, text, duration, notificationType)
     MessageLabel.TextWrapped = true
     MessageLabel.TextXAlignment = Enum.TextXAlignment.Left
     MessageLabel.TextYAlignment = Enum.TextYAlignment.Top
-    MessageLabel.TextTransparency = 1
     MessageLabel.Parent = NotificationFrame
 
     local TypeIcon = Instance.new("ImageLabel")
@@ -752,45 +741,39 @@ function Library:Notify(title, text, duration, notificationType)
     TypeIcon.Position = UDim2.new(1, -30, 0, 5)
     TypeIcon.BackgroundTransparency = 1
     TypeIcon.Image = IconTypes[notificationType] or IconTypes.Info
-    TypeIcon.ImageTransparency = 1
     TypeIcon.Parent = NotificationFrame
 
-    table.insert(self.Notifications, {Frame = NotificationFrame, Gui = NotificationGui})
+    table.insert(self.Notifications, NotificationGui)
 
-    -- Animations
-    local tweenIn = createTween(NotificationFrame, {BackgroundTransparency = 0, Position = UDim2.new(1, -300, 0.7, -40 + offsetY)}, 0.5)
-    local tweenTitleIn = createTween(TitleLabel, {TextTransparency = 0}, 0.5)
-    local tweenMessageIn = createTween(MessageLabel, {TextTransparency = 0}, 0.5)
-    local tweenIconIn = createTween(TypeIcon, {ImageTransparency = 0}, 0.5)
-
+    -- Animation: Slide in with bounce
+    NotificationFrame.Position = UDim2.new(1, 300, 0.6, -40 + offset)
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out)
+    local tweenIn = TweenService:Create(NotificationFrame, tweenInfo, {Position = UDim2.new(1, -300, 0.6, -40 + offset)})
     tweenIn:Play()
-    tweenTitleIn:Play()
-    tweenMessageIn:Play()
-    tweenIconIn:Play()
 
     task.spawn(function()
         task.wait(duration)
         if NotificationFrame and NotificationFrame.Parent then
-            local tweenOut = createTween(NotificationFrame, {BackgroundTransparency = 1, Position = UDim2.new(1, 20, 0.7, -40 + offsetY)}, 0.5)
-            local tweenTitleOut = createTween(TitleLabel, {TextTransparency = 1}, 0.5)
-            local tweenMessageOut = createTween(MessageLabel, {TextTransparency = 1}, 0.5)
-            local tweenIconOut = createTween(TypeIcon, {ImageTransparency = 1}, 0.5)
-
+            local tweenOut = TweenService:Create(NotificationFrame, tweenInfo, {Position = UDim2.new(1, 300, 0.6, -40 + offset)})
             tweenOut:Play()
-            tweenTitleOut:Play()
-            tweenMessageOut:Play()
-            tweenIconOut:Play()
-
-            tweenOut.Completed:Wait()
-            if NotificationGui and NotificationGui.Parent then
-                NotificationGui:Destroy()
-                for i, notif in ipairs(self.Notifications) do
-                    if notif.Gui == NotificationGui then
-                        table.remove(self.Notifications, i)
-                        break
+            tweenOut.Completed:Connect(function()
+                if NotificationGui and NotificationGui.Parent then
+                    for i, notif in ipairs(self.Notifications) do
+                        if notif == NotificationGui then
+                            table.remove(self.Notifications, i)
+                            break
+                        end
+                    end
+                    NotificationGui:Destroy()
+                    -- Update positions of remaining notifications
+                    for i, notif in ipairs(self.Notifications) do
+                        local frame = notif.NotificationFrame
+                        local newOffset = (i - 1) * 90
+                        local tween = TweenService:Create(frame, tweenInfo, {Position = UDim2.new(1, -300, 0.6, -40 + newOffset)})
+                        tween:Play()
                     end
                 end
-            end
+            end)
         end
     end)
 end
