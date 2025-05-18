@@ -4,6 +4,11 @@ Library.Tabs = {}
 Library.Toggles = {}
 Library.Sliders = {}
 Library.Dropdowns = {}
+Library.Notifications = {}
+
+-- Services
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 -- Colors and Configuration
 local Colors = {
@@ -21,27 +26,33 @@ local Colors = {
     NotificationBorder = Color3.fromRGB(60, 60, 255)
 }
 
--- Notification stack management
-local NotificationStack = {}
-local NOTIFICATION_OFFSET = 100
-local NOTIFICATION_SPACING = 10
+-- Icon Types
+local rblx = "rbxassetid://"
+local IconTypes = {
+    Info = "ℹ️",
+    Warning = "⚠️",
+    Error = "❌",
+    Success = "✅",
+    Notify = rblx .. "6023426923",
+    SuccessL = rblx .. "6023426926", -- Corrected ID assuming typo
+    Human = rblx .. "6022668945",
+    Block = rblx .. "6023565892",
+    Document = rblx .. "6022668888"
+}
 
--- Helper function for animations
+-- Animation Helper
 local function createTween(instance, properties, duration, easingStyle, easingDirection)
-    local TweenService = game:GetService("TweenService")
     local tweenInfo = TweenInfo.new(duration, easingStyle or Enum.EasingStyle.Quad, easingDirection or Enum.EasingDirection.Out)
-    local tween = TweenService:Create(instance, tweenInfo, properties)
-    tween:Play()
-    return tween
+    return TweenService:Create(instance, tweenInfo, properties)
 end
 
 -- Main GUI creation
 function Library:CreateWindow(title)
     local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = title.."GUI"
+    ScreenGui.Name = title .. "GUI"
     ScreenGui.Parent = game.CoreGui
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
+
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
     MainFrame.Size = UDim2.new(0, 700, 0, 400)
@@ -51,28 +62,22 @@ function Library:CreateWindow(title)
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = ScreenGui
     MainFrame.BackgroundTransparency = 1
-    
+
     -- Fade-in animation
-    createTween(MainFrame, {BackgroundTransparency = 0}, 0.5)
-    
-    -- Make draggable
-    local UserInputService = game:GetService("UserInputService")
-    local dragging
-    local dragInput
-    local dragStart
-    local startPos
-    
+    createTween(MainFrame, {BackgroundTransparency = 0}, 0.5):Play()
+
+    -- Draggable
+    local dragging, dragInput, dragStart, startPos
     local function updateDrag(input)
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
-    
+
     MainFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = MainFrame.Position
-            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -80,19 +85,19 @@ function Library:CreateWindow(title)
             end)
         end
     end)
-    
+
     MainFrame.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
-    
+
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             updateDrag(input)
         end
     end)
-    
+
     -- Title bar
     local TitleBar = Instance.new("Frame")
     TitleBar.Name = "TitleBar"
@@ -100,7 +105,7 @@ function Library:CreateWindow(title)
     TitleBar.BackgroundColor3 = Colors.TabBackground
     TitleBar.BorderSizePixel = 0
     TitleBar.Parent = MainFrame
-    
+
     local TitleText = Instance.new("TextLabel")
     TitleText.Name = "Title"
     TitleText.Size = UDim2.new(1, -10, 1, 0)
@@ -112,7 +117,7 @@ function Library:CreateWindow(title)
     TitleText.Font = Enum.Font.SourceSansBold
     TitleText.TextXAlignment = Enum.TextXAlignment.Left
     TitleText.Parent = TitleBar
-    
+
     -- Close button
     local CloseButton = Instance.new("TextButton")
     CloseButton.Name = "CloseButton"
@@ -124,13 +129,13 @@ function Library:CreateWindow(title)
     CloseButton.TextSize = 16
     CloseButton.Font = Enum.Font.SourceSansBold
     CloseButton.Parent = TitleBar
-    
+
     CloseButton.MouseButton1Click:Connect(function()
-        createTween(MainFrame, {BackgroundTransparency = 1}, 0.5).Completed:Connect(function()
-            ScreenGui:Destroy()
-        end)
+        createTween(MainFrame, {BackgroundTransparency = 1}, 0.5):Play()
+        task.wait(0.5)
+        ScreenGui:Destroy()
     end)
-    
+
     -- Tab container
     local TabContainer = Instance.new("Frame")
     TabContainer.Name = "TabContainer"
@@ -139,13 +144,13 @@ function Library:CreateWindow(title)
     TabContainer.BackgroundColor3 = Colors.TabBackground
     TabContainer.BorderSizePixel = 0
     TabContainer.Parent = MainFrame
-    
+
     local TabLayout = Instance.new("UIListLayout")
     TabLayout.FillDirection = Enum.FillDirection.Vertical
     TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
     TabLayout.Padding = UDim.new(0, 1)
     TabLayout.Parent = TabContainer
-    
+
     -- Content frame
     local ContentFrame = Instance.new("Frame")
     ContentFrame.Name = "ContentFrame"
@@ -154,31 +159,38 @@ function Library:CreateWindow(title)
     ContentFrame.BackgroundColor3 = Colors.Background
     ContentFrame.BorderSizePixel = 0
     ContentFrame.Parent = MainFrame
-    
-    local window = {}
-    window.ContentFrame = ContentFrame
-    window.TabContainer = TabContainer
-    window.MainFrame = MainFrame
-    window.ScreenGui = ScreenGui
-    
+
+    local window = {
+        ContentFrame = ContentFrame,
+        TabContainer = TabContainer,
+        MainFrame = MainFrame,
+        ScreenGui = ScreenGui
+    }
+
     return window
 end
 
 -- Add tab function
 function Library:AddTab(window, tabName, icon)
-    -- Tab button
     local TabButton = Instance.new("TextButton")
-    TabButton.Name = tabName.."Tab"
+    TabButton.Name = tabName .. "Tab"
     TabButton.Size = UDim2.new(1, 0, 0, 40)
     TabButton.BackgroundColor3 = Colors.TabBackground
     TabButton.BorderSizePixel = 0
     TabButton.Text = ""
     TabButton.Parent = window.TabContainer
     TabButton.BackgroundTransparency = 0.5
-    
-    -- Fade-in animation
-    createTween(TabButton, {BackgroundTransparency = 0}, 0.3)
-    
+
+    -- Scale animation on hover
+    TabButton.MouseEnter:Connect(function()
+        createTween(TabButton, {BackgroundTransparency = 0, Size = UDim2.new(1, 0, 0, 42)}, 0.2):Play()
+    end)
+    TabButton.MouseLeave:Connect(function()
+        if TabButton.BackgroundColor3 ~= Colors.Selected then
+            createTween(TabButton, {BackgroundTransparency = 0.5, Size = UDim2.new(1, 0, 0, 40)}, 0.2):Play()
+        end
+    end)
+
     local TabLabel = Instance.new("TextLabel")
     TabLabel.Name = "Label"
     TabLabel.Size = UDim2.new(1, -10, 1, 0)
@@ -190,21 +202,20 @@ function Library:AddTab(window, tabName, icon)
     TabLabel.Font = Enum.Font.SourceSansBold
     TabLabel.TextXAlignment = Enum.TextXAlignment.Left
     TabLabel.Parent = TabButton
-    
-    -- Icon if provided
-    if icon then
+
+    -- Icon support
+    if icon and IconTypes[icon] then
         local IconImage = Instance.new("ImageLabel")
         IconImage.Name = "Icon"
         IconImage.Size = UDim2.new(0, 20, 0, 20)
         IconImage.Position = UDim2.new(0, 10, 0.5, -10)
         IconImage.BackgroundTransparency = 1
-        IconImage.Image = icon
+        IconImage.Image = IconTypes[icon]
         IconImage.Parent = TabButton
     end
-    
-    -- Create content page
+
     local ContentPage = Instance.new("ScrollingFrame")
-    ContentPage.Name = tabName.."Page"
+    ContentPage.Name = tabName .. "Page"
     ContentPage.Size = UDim2.new(1, -20, 1, -20)
     ContentPage.Position = UDim2.new(0, 10, 0, 10)
     ContentPage.BackgroundTransparency = 1
@@ -214,89 +225,94 @@ function Library:AddTab(window, tabName, icon)
     ContentPage.ScrollingDirection = Enum.ScrollingDirection.Y
     ContentPage.CanvasSize = UDim2.new(0, 0, 0, 0)
     ContentPage.Parent = window.ContentFrame
-    
+
     local ElementLayout = Instance.new("UIListLayout")
     ElementLayout.FillDirection = Enum.FillDirection.Vertical
     ElementLayout.SortOrder = Enum.SortOrder.LayoutOrder
     ElementLayout.Padding = UDim.new(0, 8)
     ElementLayout.Parent = ContentPage
-    
+
     ElementLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         ContentPage.CanvasSize = UDim2.new(0, 0, 0, ElementLayout.AbsoluteContentSize.Y + 20)
     end)
-    
-    -- Add tab to table
+
     table.insert(self.Tabs, {
         Button = TabButton,
         Page = ContentPage
     })
-    
-    -- Tab selection logic
+
     TabButton.MouseButton1Click:Connect(function()
         for _, tab in pairs(self.Tabs) do
             tab.Button.BackgroundColor3 = Colors.TabBackground
+            tab.Button.BackgroundTransparency = 0.5
             tab.Page.Visible = false
+            createTween(tab.Page, {CanvasPosition = Vector2.new(0, 0)}, 0.3):Play()
         end
-        
-        createTween(TabButton, {BackgroundColor3 = Colors.Selected}, 0.3)
+        TabButton.BackgroundColor3 = Colors.Selected
+        TabButton.BackgroundTransparency = 0
         ContentPage.Visible = true
-        createTween(ContentPage, {ScrollBarImageTransparency = 0}, 0.3)
+        createTween(ContentPage, {CanvasPosition = Vector2.new(0, 0)}, 0.3):Play()
     end)
-    
-    -- Select first tab by default
+
     if #self.Tabs == 1 then
         TabButton.BackgroundColor3 = Colors.Selected
+        TabButton.BackgroundTransparency = 0
         ContentPage.Visible = true
     end
-    
-    local tab = {}
-    tab.Page = ContentPage
-    
+
+    local tab = {Page = ContentPage}
     return tab
 end
 
 -- Add label function
-function Library:AddLabel(tab, text)
+function Library:AddLabel(tab, text, icon)
     local LabelContainer = Instance.new("Frame")
-    LabelContainer.Name = "LabelContainer"
+    LabelContainer.Name = text .. "Label"
     LabelContainer.Size = UDim2.new(1, 0, 0, 30)
     LabelContainer.BackgroundTransparency = 1
     LabelContainer.Parent = tab.Page
-    
-    local Label = Instance.new("TextLabel")
-    Label.Name = "Label"
-    Label.Size = UDim2.new(1, -10, 1, 0)
-    Label.Position = UDim2.new(0, 10, 0, 0)
-    Label.BackgroundTransparency = 1
-    Label.Text = text
-    Label.TextColor3 = Colors.Text
-    Label.TextSize = 14
-    Label.Font = Enum.Font.SourceSans
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.TextTransparency = 1
-    Label.Parent = LabelContainer
-    
+
+    local LabelText = Instance.new("TextLabel")
+    LabelText.Name = "Label"
+    LabelText.Size = UDim2.new(1, -40, 1, 0)
+    LabelText.Position = UDim2.new(0, 40, 0, 0)
+    LabelText.BackgroundTransparency = 1
+    LabelText.Text = text
+    LabelText.TextColor3 = Colors.Text
+    LabelText.TextSize = 14
+    LabelText.Font = Enum.Font.SourceSans
+    LabelText.TextXAlignment = Enum.TextXAlignment.Left
+    LabelText.Parent = LabelContainer
+
+    -- Icon support
+    if icon and IconTypes[icon] then
+        local IconImage = Instance.new("ImageLabel")
+        IconImage.Name = "Icon"
+        IconImage.Size = UDim2.new(0, 20, 0, 20)
+        IconImage.Position = UDim2.new(0, 10, 0.5, -10)
+        IconImage.BackgroundTransparency = 1
+        IconImage.Image = IconTypes[icon]
+        IconImage.Parent = LabelContainer
+    end
+
     -- Fade-in animation
-    createTween(Label, {TextTransparency = 0}, 0.5)
-    
-    local label = {}
-    label.Container = LabelContainer
-    label.Label = Label
-    
-    return label
+    LabelText.TextTransparency = 1
+    createTween(LabelText, {TextTransparency = 0}, 0.5):Play()
+
+    return LabelContainer
 end
 
 -- Add toggle function
 function Library:AddToggle(tab, name, default, callback)
     local default = default or false
     local callback = callback or function() end
-    
+
     local ToggleContainer = Instance.new("Frame")
-    ToggleContainer.Name = name.."Toggle"
+    ToggleContainer.Name = name .. "Toggle"
     ToggleContainer.Size = UDim2.new(1, 0, 0, 30)
     ToggleContainer.BackgroundTransparency = 1
     ToggleContainer.Parent = tab.Page
-    
+
     local ToggleLabel = Instance.new("TextLabel")
     ToggleLabel.Name = "Label"
     ToggleLabel.Size = UDim2.new(1, -60, 1, 0)
@@ -307,9 +323,8 @@ function Library:AddToggle(tab, name, default, callback)
     ToggleLabel.TextSize = 14
     ToggleLabel.Font = Enum.Font.SourceSans
     ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    ToggleLabel.TextTransparency = 1
     ToggleLabel.Parent = ToggleContainer
-    
+
     local ToggleButton = Instance.new("Frame")
     ToggleButton.Name = "ToggleButton"
     ToggleButton.Size = UDim2.new(0, 40, 0, 20)
@@ -317,7 +332,7 @@ function Library:AddToggle(tab, name, default, callback)
     ToggleButton.BackgroundColor3 = default and Colors.ToggleOn or Colors.ToggleOff
     ToggleButton.BorderSizePixel = 0
     ToggleButton.Parent = ToggleContainer
-    
+
     local ToggleCircle = Instance.new("Frame")
     ToggleCircle.Name = "Circle"
     ToggleCircle.Size = UDim2.new(0, 16, 0, 16)
@@ -325,45 +340,48 @@ function Library:AddToggle(tab, name, default, callback)
     ToggleCircle.BackgroundColor3 = Colors.Text
     ToggleCircle.BorderSizePixel = 0
     ToggleCircle.Parent = ToggleButton
-    
+
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(1, 0)
     UICorner.Parent = ToggleButton
-    
+
     local UICorner2 = Instance.new("UICorner")
     UICorner2.CornerRadius = UDim.new(1, 0)
     UICorner2.Parent = ToggleCircle
-    
-    local Toggle = {}
-    Toggle.Value = default
-    Toggle.Container = ToggleContainer
-    Toggle.Button = ToggleButton
-    Toggle.Circle = ToggleCircle
-    
-    -- For clicking anywhere on the toggle container
+
     local ToggleClickArea = Instance.new("TextButton")
     ToggleClickArea.Name = "ClickArea"
     ToggleClickArea.Size = UDim2.new(1, 0, 1, 0)
     ToggleClickArea.BackgroundTransparency = 1
     ToggleClickArea.Text = ""
     ToggleClickArea.Parent = ToggleContainer
-    
+
+    local Toggle = {
+        Value = default,
+        Container = ToggleContainer,
+        Button = ToggleButton,
+        Circle = ToggleCircle
+    }
+
     local function updateToggle()
         Toggle.Value = not Toggle.Value
-        
-        createTween(ToggleButton, {BackgroundColor3 = Toggle.Value and Colors.ToggleOn or Colors.ToggleOff}, 0.2)
-        createTween(ToggleCircle, {Position = Toggle.Value and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)}, 0.2)
+        if Toggle.Value then
+            createTween(ToggleButton, {BackgroundColor3 = Colors.ToggleOn}, 0.2):Play()
+            createTween(ToggleCircle, {Position = UDim2.new(1, -18, 0.5, -8)}, 0.2):Play()
+        else
+            createTween(ToggleButton, {BackgroundColor3 = Colors.ToggleOff}, 0.2):Play()
+            createTween(ToggleCircle, {Position = UDim2.new(0, 2, 0.5, -8)}, 0.2):Play()
+        end
         callback(Toggle.Value)
     end
-    
+
     ToggleClickArea.MouseButton1Click:Connect(updateToggle)
-    
-    -- Fade-in animation
-    createTween(ToggleLabel, {TextTransparency = 0}, 0.5)
-    
-    -- Add to toggles table
     table.insert(self.Toggles, Toggle)
-    
+
+    -- Fade-in animation
+    ToggleContainer.BackgroundTransparency = 1
+    createTween(ToggleContainer, {BackgroundTransparency = 0}, 0.5):Play()
+
     return Toggle
 end
 
@@ -376,13 +394,13 @@ function Library:AddSlider(tab, name, options, callback)
     local precise = options.precise or false
     local suffix = options.suffix or ""
     local callback = callback or function() end
-    
+
     local SliderContainer = Instance.new("Frame")
-    SliderContainer.Name = name.."Slider"
+    SliderContainer.Name = name .. "Slider"
     SliderContainer.Size = UDim2.new(1, 0, 0, 50)
     SliderContainer.BackgroundTransparency = 1
     SliderContainer.Parent = tab.Page
-    
+
     local SliderLabel = Instance.new("TextLabel")
     SliderLabel.Name = "Label"
     SliderLabel.Size = UDim2.new(1, -10, 0, 20)
@@ -393,9 +411,8 @@ function Library:AddSlider(tab, name, options, callback)
     SliderLabel.TextSize = 14
     SliderLabel.Font = Enum.Font.SourceSans
     SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-    SliderLabel.TextTransparency = 1
     SliderLabel.Parent = SliderContainer
-    
+
     local SliderBackground = Instance.new("Frame")
     SliderBackground.Name = "Background"
     SliderBackground.Size = UDim2.new(1, -20, 0, 6)
@@ -403,21 +420,21 @@ function Library:AddSlider(tab, name, options, callback)
     SliderBackground.BackgroundColor3 = Colors.SliderBackground
     SliderBackground.BorderSizePixel = 0
     SliderBackground.Parent = SliderContainer
-    
+
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(0, 3)
     UICorner.Parent = SliderBackground
-    
+
     local SliderFill = Instance.new("Frame")
     SliderFill.Name = "Fill"
     SliderFill.BackgroundColor3 = Colors.SliderFill
     SliderFill.BorderSizePixel = 0
     SliderFill.Parent = SliderBackground
-    
+
     local UICorner2 = Instance.new("UICorner")
     UICorner2.CornerRadius = UDim.new(0, 3)
     UICorner2.Parent = SliderFill
-    
+
     local SliderValue = Instance.new("TextLabel")
     SliderValue.Name = "Value"
     SliderValue.Size = UDim2.new(0, 50, 0, 20)
@@ -427,9 +444,8 @@ function Library:AddSlider(tab, name, options, callback)
     SliderValue.TextSize = 14
     SliderValue.Font = Enum.Font.SourceSans
     SliderValue.TextXAlignment = Enum.TextXAlignment.Right
-    SliderValue.TextTransparency = 1
     SliderValue.Parent = SliderContainer
-    
+
     local SliderThumb = Instance.new("Frame")
     SliderThumb.Name = "Thumb"
     SliderThumb.Size = UDim2.new(0, 12, 0, 12)
@@ -438,12 +454,11 @@ function Library:AddSlider(tab, name, options, callback)
     SliderThumb.BorderSizePixel = 0
     SliderThumb.ZIndex = 2
     SliderThumb.Parent = SliderFill
-    
+
     local UICorner3 = Instance.new("UICorner")
     UICorner3.CornerRadius = UDim.new(1, 0)
     UICorner3.Parent = SliderThumb
-    
-    -- For clicking/dragging functionality
+
     local SliderClickArea = Instance.new("TextButton")
     SliderClickArea.Name = "ClickArea"
     SliderClickArea.Size = UDim2.new(1, 0, 3, 0)
@@ -451,75 +466,72 @@ function Library:AddSlider(tab, name, options, callback)
     SliderClickArea.BackgroundTransparency = 1
     SliderClickArea.Text = ""
     SliderClickArea.Parent = SliderBackground
-    
-    local Slider = {}
-    Slider.Value = default
-    Slider.Container = SliderContainer
-    Slider.Background = SliderBackground
-    Slider.Fill = SliderFill
-    
+
+    local Slider = {
+        Value = default,
+        Container = SliderContainer,
+        Background = SliderBackground,
+        Fill = SliderFill
+    }
+
     local function updateSlider(input)
         local posX = input.Position.X
         local absPos = SliderBackground.AbsolutePosition.X
         local absSize = SliderBackground.AbsoluteSize.X
-        
+
         local relPos = math.clamp((posX - absPos) / absSize, 0, 1)
         local value = min + (max - min) * relPos
-        
+
         if not precise then
             value = math.floor(value)
         else
             value = math.floor(value * 100) / 100
         end
-        
+
         Slider.Value = value
-        
-        -- Update UI
+
         local displayValue = precise and string.format("%.2f", value) or tostring(value)
         SliderValue.Text = displayValue .. suffix
-        
+
         local fillWidth = relPos * SliderBackground.AbsoluteSize.X
-        createTween(SliderFill, {Size = UDim2.new(0, fillWidth, 1, 0)}, 0.2)
-        createTween(SliderThumb, {Position = UDim2.new(0, fillWidth - 6, 0.5, -6)}, 0.2)
-        
+        createTween(SliderFill, {Size = UDim2.new(0, fillWidth, 1, 0)}, 0.1):Play()
+        createTween(SliderThumb, {Position = UDim2.new(0, fillWidth - 6, 0.5, -6)}, 0.1):Play()
+
         callback(value)
     end
-    
-    -- Set initial value
+
     local initialRelPos = (default - min) / (max - min)
     local initialDisplayValue = precise and string.format("%.2f", default) or tostring(default)
     SliderValue.Text = initialDisplayValue .. suffix
-    
+
     local initialFillWidth = initialRelPos * SliderBackground.AbsoluteSize.X
     SliderFill.Size = UDim2.new(initialRelPos, 0, 1, 0)
     SliderThumb.Position = UDim2.new(1, -6, 0.5, -6)
-    
-    -- Handle dragging
+
     local dragging = false
     SliderClickArea.MouseButton1Down:Connect(function(input)
         dragging = true
         updateSlider({Position = input})
     end)
-    
+
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
-    
+
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             updateSlider(input)
         end
     end)
-    
-    -- Fade-in animation
-    createTween(SliderLabel, {TextTransparency = 0}, 0.5)
-    createTween(SliderValue, {TextTransparency = 0}, 0.5)
-    
-    -- Add to sliders table
+
     table.insert(self.Sliders, Slider)
-    
+
+    -- Fade-in animation
+    SliderContainer.BackgroundTransparency = 1
+    createTween(SliderContainer, {BackgroundTransparency = 0}, 0.5):Play()
+
     return Slider
 end
 
@@ -527,13 +539,13 @@ end
 function Library:AddDropdown(tab, name, options, callback)
     local options = options or {}
     local callback = callback or function() end
-    
+
     local DropdownContainer = Instance.new("Frame")
-    DropdownContainer.Name = name.."Dropdown"
+    DropdownContainer.Name = name .. "Dropdown"
     DropdownContainer.Size = UDim2.new(1, 0, 0, 60)
     DropdownContainer.BackgroundTransparency = 1
     DropdownContainer.Parent = tab.Page
-    
+
     local DropdownLabel = Instance.new("TextLabel")
     DropdownLabel.Name = "Label"
     DropdownLabel.Size = UDim2.new(1, -10, 0, 20)
@@ -544,9 +556,8 @@ function Library:AddDropdown(tab, name, options, callback)
     DropdownLabel.TextSize = 14
     DropdownLabel.Font = Enum.Font.SourceSans
     DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
-    DropdownLabel.TextTransparency = 1
     DropdownLabel.Parent = DropdownContainer
-    
+
     local DropdownButton = Instance.new("TextButton")
     DropdownButton.Name = "Button"
     DropdownButton.Size = UDim2.new(1, -20, 0, 30)
@@ -559,18 +570,17 @@ function Library:AddDropdown(tab, name, options, callback)
     DropdownButton.Font = Enum.Font.SourceSans
     DropdownButton.TextXAlignment = Enum.TextXAlignment.Left
     DropdownButton.TextTruncate = Enum.TextTruncate.AtEnd
-    DropdownButton.ClipsDescendants = true
     DropdownButton.ZIndex = 10
     DropdownButton.Parent = DropdownContainer
-    
+
     local DropdownPadding = Instance.new("UIPadding")
     DropdownPadding.PaddingLeft = UDim.new(0, 10)
     DropdownPadding.Parent = DropdownButton
-    
+
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(0, 4)
     UICorner.Parent = DropdownButton
-    
+
     local DropdownArrow = Instance.new("TextLabel")
     DropdownArrow.Name = "Arrow"
     DropdownArrow.Size = UDim2.new(0, 20, 0, 20)
@@ -582,7 +592,7 @@ function Library:AddDropdown(tab, name, options, callback)
     DropdownArrow.Font = Enum.Font.SourceSans
     DropdownArrow.ZIndex = 11
     DropdownArrow.Parent = DropdownButton
-    
+
     local DropdownMenu = Instance.new("Frame")
     DropdownMenu.Name = "Menu"
     DropdownMenu.Size = UDim2.new(1, 0, 0, #options * 25)
@@ -592,28 +602,28 @@ function Library:AddDropdown(tab, name, options, callback)
     DropdownMenu.Visible = false
     DropdownMenu.ZIndex = 15
     DropdownMenu.Parent = DropdownButton
-    
+
     local UICorner2 = Instance.new("UICorner")
     UICorner2.CornerRadius = UDim.new(0, 4)
     UICorner2.Parent = DropdownMenu
-    
+
     local OptionLayout = Instance.new("UIListLayout")
     OptionLayout.FillDirection = Enum.FillDirection.Vertical
     OptionLayout.SortOrder = Enum.SortOrder.LayoutOrder
     OptionLayout.Padding = UDim.new(0, 0)
     OptionLayout.Parent = DropdownMenu
-    
-    local Dropdown = {}
-    Dropdown.Container = DropdownContainer
-    Dropdown.Button = DropdownButton
-    Dropdown.Menu = DropdownMenu
-    Dropdown.Value = options[1] or ""
-    Dropdown.Options = options
-    
-    -- Create option buttons
+
+    local Dropdown = {
+        Container = DropdownContainer,
+        Button = DropdownButton,
+        Menu = DropdownMenu,
+        Value = options[1] or "",
+        Options = options
+    }
+
     for i, option in ipairs(options) do
         local OptionButton = Instance.new("TextButton")
-        OptionButton.Name = "Option_"..option
+        OptionButton.Name = "Option_" .. option
         OptionButton.Size = UDim2.new(1, 0, 0, 25)
         OptionButton.BackgroundTransparency = 1
         OptionButton.Text = option
@@ -623,11 +633,11 @@ function Library:AddDropdown(tab, name, options, callback)
         OptionButton.TextXAlignment = Enum.TextXAlignment.Left
         OptionButton.ZIndex = 16
         OptionButton.Parent = DropdownMenu
-        
+
         local OptionPadding = Instance.new("UIPadding")
         OptionPadding.PaddingLeft = UDim.new(0, 10)
         OptionPadding.Parent = OptionButton
-        
+
         OptionButton.MouseButton1Click:Connect(function()
             Dropdown.Value = option
             DropdownButton.Text = option
@@ -635,45 +645,43 @@ function Library:AddDropdown(tab, name, options, callback)
             DropdownArrow.Text = "▼"
             callback(option)
         end)
-        
-        -- Hover effect
+
         OptionButton.MouseEnter:Connect(function()
-            createTween(OptionButton, {BackgroundTransparency = 0.9}, 0.2)
+            createTween(OptionButton, {BackgroundTransparency = 0.9}, 0.2):Play()
         end)
-        
+
         OptionButton.MouseLeave:Connect(function()
-            createTween(OptionButton, {BackgroundTransparency = 1}, 0.2)
+            createTween(OptionButton, {BackgroundTransparency = 1}, 0.2):Play()
         end)
     end
-    
-    -- Toggle menu visibility
+
     DropdownButton.MouseButton1Click:Connect(function()
         DropdownMenu.Visible = not DropdownMenu.Visible
         DropdownArrow.Text = DropdownMenu.Visible and "▲" or "▼"
-        createTween(DropdownMenu, {BackgroundTransparency = DropdownMenu.Visible and 0 or 1}, 0.3)
+        createTween(DropdownMenu, {Size = DropdownMenu.Visible and UDim2.new(1, 0, 0, #options * 25) or UDim2.new(1, 0, 0, 0)}, 0.3):Play()
     end)
-    
-    -- Close menu when clicking elsewhere
+
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             local mousePos = UserInputService:GetMouseLocation()
             local buttonPos = DropdownButton.AbsolutePosition
             local buttonSize = DropdownButton.AbsoluteSize
-            
+
             if mousePos.X < buttonPos.X or mousePos.X > buttonPos.X + buttonSize.X or
                mousePos.Y < buttonPos.Y or mousePos.Y > buttonPos.Y + buttonSize.Y + DropdownMenu.AbsoluteSize.Y then
                 DropdownMenu.Visible = false
                 DropdownArrow.Text = "▼"
+                createTween(DropdownMenu, {Size = UDim2.new(1, 0, 0, 0)}, 0.3):Play()
             end
         end
     end)
-    
-    -- Fade-in animation
-    createTween(DropdownLabel, {TextTransparency = 0}, 0.5)
-    
-    -- Add to dropdowns table
+
     table.insert(self.Dropdowns, Dropdown)
-    
+
+    -- Fade-in animation
+    DropdownContainer.BackgroundTransparency = 1
+    createTween(DropdownContainer, {BackgroundTransparency = 0}, 0.5):Play()
+
     return Dropdown
 end
 
@@ -681,25 +689,35 @@ end
 function Library:Notify(title, text, duration, notificationType)
     local duration = duration or 5
     local notificationType = notificationType or "Info"
-    
+
     local NotificationGui = Instance.new("ScreenGui")
     NotificationGui.Name = "NotificationGui"
     NotificationGui.Parent = game.CoreGui
-    
+    NotificationGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
     local NotificationFrame = Instance.new("Frame")
     NotificationFrame.Name = "NotificationFrame"
     NotificationFrame.Size = UDim2.new(0, 280, 0, 80)
-    NotificationFrame.Position = UDim2.new(1, 20, 0, NOTIFICATION_OFFSET)
+    NotificationFrame.Position = UDim2.new(1, 20, 0.7, -40) -- Adjusted lower
     NotificationFrame.BackgroundColor3 = Colors.NotificationBackground
     NotificationFrame.BorderColor3 = Colors.NotificationBorder
     NotificationFrame.BorderSizePixel = 1
     NotificationFrame.BackgroundTransparency = 1
     NotificationFrame.Parent = NotificationGui
-    
+
+    -- Stack notifications
+    local offsetY = 0
+    for _, notif in ipairs(self.Notifications) do
+        if notif.Frame.Parent then
+            offsetY = offsetY + notif.Frame.Size.Y.Offset + 10
+        end
+    end
+    NotificationFrame.Position = UDim2.new(1, 20, 0.7, -40 + offsetY)
+
     local UICorner = Instance.new("UICorner")
     UICorner.CornerRadius = UDim.new(0, 6)
     UICorner.Parent = NotificationFrame
-    
+
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Name = "Title"
     TitleLabel.Size = UDim2.new(1, -20, 0, 24)
@@ -712,7 +730,7 @@ function Library:Notify(title, text, duration, notificationType)
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.TextTransparency = 1
     TitleLabel.Parent = NotificationFrame
-    
+
     local MessageLabel = Instance.new("TextLabel")
     MessageLabel.Name = "Message"
     MessageLabel.Size = UDim2.new(1, -20, 1, -34)
@@ -727,60 +745,54 @@ function Library:Notify(title, text, duration, notificationType)
     MessageLabel.TextYAlignment = Enum.TextYAlignment.Top
     MessageLabel.TextTransparency = 1
     MessageLabel.Parent = NotificationFrame
-    
-    -- Type icon
-    local IconTypes = {
-        Info = "ℹ️",
-        Warning = "⚠️",
-        Error = "❌",
-        Success = "✅"
-    }
-    
-    local TypeIcon = Instance.new("TextLabel")
+
+    local TypeIcon = Instance.new("ImageLabel")
     TypeIcon.Name = "TypeIcon"
     TypeIcon.Size = UDim2.new(0, 24, 0, 24)
     TypeIcon.Position = UDim2.new(1, -30, 0, 5)
     TypeIcon.BackgroundTransparency = 1
-    TypeIcon.Text = IconTypes[notificationType] or IconTypes.Info
-    TypeIcon.TextColor3 = Colors.Text
-    TypeIcon.TextSize = 18
-    TypeIcon.Font = Enum.Font.SourceSansBold
-    TypeIcon.TextTransparency = 1
+    TypeIcon.Image = IconTypes[notificationType] or IconTypes.Info
+    TypeIcon.ImageTransparency = 1
     TypeIcon.Parent = NotificationFrame
-    
-    -- Stack notifications
-    table.insert(NotificationStack, NotificationFrame)
-    
-    local function updateNotificationPositions()
-        for i, frame in ipairs(NotificationStack) do
-            createTween(frame, {Position = UDim2.new(1, -300, 0, NOTIFICATION_OFFSET + (i - 1) * (80 + NOTIFICATION_SPACING))}, 0.3)
-        end
-    end
-    
-    -- Animation in
-    createTween(NotificationFrame, {BackgroundTransparency = 0, Position = UDim2.new(1, -300, 0, NOTIFICATION_OFFSET)}, 0.5)
-    createTween(TitleLabel, {TextTransparency = 0}, 0.5)
-    createTween(MessageLabel, {TextTransparency = 0}, 0.5)
-    createTween(TypeIcon, {TextTransparency = 0}, 0.5)
-    updateNotificationPositions()
-    
-    -- Wait and animate out
+
+    table.insert(self.Notifications, {Frame = NotificationFrame, Gui = NotificationGui})
+
+    -- Animations
+    local tweenIn = createTween(NotificationFrame, {BackgroundTransparency = 0, Position = UDim2.new(1, -300, 0.7, -40 + offsetY)}, 0.5)
+    local tweenTitleIn = createTween(TitleLabel, {TextTransparency = 0}, 0.5)
+    local tweenMessageIn = createTween(MessageLabel, {TextTransparency = 0}, 0.5)
+    local tweenIconIn = createTween(TypeIcon, {ImageTransparency = 0}, 0.5)
+
+    tweenIn:Play()
+    tweenTitleIn:Play()
+    tweenMessageIn:Play()
+    tweenIconIn:Play()
+
     task.spawn(function()
         task.wait(duration)
         if NotificationFrame and NotificationFrame.Parent then
-            createTween(NotificationFrame, {BackgroundTransparency = 1, Position = UDim2.new(1, 20, 0, NotificationFrame.Position.Y.Offset)}, 0.5)
-            createTween(TitleLabel, {TextTransparency = 1}, 0.5)
-            createTween(MessageLabel, {TextTransparency = 1}, 0.5)
-            createTween(TypeIcon, {TextTransparency = 1}, 0.5).Completed:Connect(function()
-                if NotificationGui and NotificationGui.Parent then
-                    NotificationGui:Destroy()
-                    table.remove(NotificationStack, table.find(NotificationStack, NotificationFrame))
-                    updateNotificationPositions()
+            local tweenOut = createTween(NotificationFrame, {BackgroundTransparency = 1, Position = UDim2.new(1, 20, 0.7, -40 + offsetY)}, 0.5)
+            local tweenTitleOut = createTween(TitleLabel, {TextTransparency = 1}, 0.5)
+            local tweenMessageOut = createTween(MessageLabel, {TextTransparency = 1}, 0.5)
+            local tweenIconOut = createTween(TypeIcon, {ImageTransparency = 1}, 0.5)
+
+            tweenOut:Play()
+            tweenTitleOut:Play()
+            tweenMessageOut:Play()
+            tweenIconOut:Play()
+
+            tweenOut.Completed:Wait()
+            if NotificationGui and NotificationGui.Parent then
+                NotificationGui:Destroy()
+                for i, notif in ipairs(self.Notifications) do
+                    if notif.Gui == NotificationGui then
+                        table.remove(self.Notifications, i)
+                        break
+                    end
                 end
-            end)
+            end
         end
     end)
 end
 
--- Return the library
 return Library
